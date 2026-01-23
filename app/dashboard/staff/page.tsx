@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_URL } from '@/lib/config';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -57,7 +58,7 @@ export default function StaffPage() {
     const fetchStaff = async () => {
         try {
             setLoading(true);
-            const { data } = await axios.get('http://localhost:5000/api/staff', { withCredentials: true });
+            const { data } = await axios.get(`${API_URL}/staff`, { withCredentials: true });
             setStaffMembers(data);
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Failed to fetch staff');
@@ -74,7 +75,7 @@ export default function StaffPage() {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await axios.post('http://localhost:5000/api/staff', formData, { withCredentials: true });
+            await axios.post(`${API_URL}/staff`, formData, { withCredentials: true });
             toast.success('Staff registered successfully');
             setIsDialogOpen(false);
             setFormData({ name: '', email: '', password: '', role: 'Receptionist' });

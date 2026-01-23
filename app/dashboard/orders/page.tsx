@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, CreditCard, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { API_URL } from '@/lib/config';
 
 interface OrderItem {
     name: string;
@@ -64,7 +65,7 @@ export default function OrdersPage() {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/orders', { withCredentials: true });
+                const response = await axios.get(`${API_URL}/orders`, { withCredentials: true });
                 if (response.data.orders) {
                     setOrders(response.data.orders);
                 } else if (Array.isArray(response.data)) {
@@ -125,7 +126,7 @@ export default function OrdersPage() {
 
         // API Call
         try {
-            await axios.put(`http://localhost:5000/api/orders/${draggableId}/status`, {
+            await axios.put(`${API_URL}/orders/${draggableId}/status`, {
                 status: newStatus
             }, { withCredentials: true });
         } catch (error) {

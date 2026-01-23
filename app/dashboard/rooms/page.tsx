@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_URL } from '@/lib/config';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +26,7 @@ export default function RoomsPage() {
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/rooms', { withCredentials: true });
+                const response = await axios.get(`${API_URL}/rooms`, { withCredentials: true });
                 if (response.data.rooms) {
                     setRooms(response.data.rooms);
                 } else if (Array.isArray(response.data)) {

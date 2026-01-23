@@ -12,6 +12,7 @@ import { useSocket } from '@/components/providers/SocketProvider';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
+import { API_URL } from '@/lib/config';
 import { formatDistanceToNow } from 'date-fns';
 
 type ServiceRequest = {
@@ -36,7 +37,7 @@ export default function ServiceRequestsPage() {
 
     const fetchRequests = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/service-requests', {
+            const { data } = await axios.get(`${API_URL}/service-requests`, {
                 withCredentials: true
             });
             setRequests(data);
@@ -75,7 +76,7 @@ export default function ServiceRequestsPage() {
                 req._id === id ? { ...req, status: newStatus as any } : req
             ));
 
-            await axios.put(`http://localhost:5000/api/service-requests/${id}/status`, {
+            await axios.put(`${API_URL}/service-requests/${id}/status`, {
                 status: newStatus
             }, { withCredentials: true });
         } catch (error) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from '@/lib/config';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +51,7 @@ export default function MenuPage() {
     useEffect(() => {
         const fetchMenu = async () => {
             try {
-                const { data } = await axios.get('http://localhost:5000/api/menu', { withCredentials: true });
+                const { data } = await axios.get(`${API_URL}/menu`, { withCredentials: true });
                 setMenuItems(data);
             } catch (error) {
                 console.error("Failed to fetch menu", error);
@@ -72,12 +73,12 @@ export default function MenuPage() {
 
             if (editingId) {
                 // Edit existing
-                const { data } = await axios.put(`http://localhost:5000/api/menu/${editingId}`, payload, { withCredentials: true });
+                const { data } = await axios.put(`${API_URL}/menu/${editingId}`, payload, { withCredentials: true });
                 setMenuItems(prev => prev.map(item => item._id === editingId ? data : item));
                 toast.success("Dish updated successfully");
             } else {
                 // Create new
-                const { data } = await axios.post('http://localhost:5000/api/menu', payload, { withCredentials: true });
+                const { data } = await axios.post(`${API_URL}/menu`, payload, { withCredentials: true });
                 setMenuItems(prev => [...prev, data]);
                 toast.success("Dish added successfully");
             }
@@ -122,7 +123,7 @@ export default function MenuPage() {
 
         try {
             setUploading(true);
-            const { data } = await axios.post('http://localhost:5000/api/upload', formData, {
+            const { data } = await axios.post(`${API_URL}/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });
@@ -141,7 +142,7 @@ export default function MenuPage() {
             // Optimistic update
             setMenuItems(prev => prev.map(item => item._id === id ? { ...item, isActive: !currentStatus } : item));
 
-            await axios.put(`http://localhost:5000/api/menu/${id}`, {
+            await axios.put(`${API_URL}/menu/${id}`, {
                 isActive: !currentStatus
             }, { withCredentials: true });
         } catch (error) {
