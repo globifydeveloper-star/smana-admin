@@ -40,9 +40,7 @@ export default function FeedbackPage() {
     useEffect(() => {
         const fetchFeedbacks = async () => {
             try {
-                // Assuming Next.js proxies or absolute URL is handled. using relative /api proxy commonly setup in next.config.mjs or localhost:5000 if cors allowed.
-                // Admin usually has axios instance with baseURL. Let's assume axios is configured or use direct URL for now.
-                // Checking previous code: Admin likely talks to localhost:5000 directly via proxy or CORS.
+
                 const response = await axios.get(`${API_URL}/feedbacks`, { 
                     withCredentials: true 
                 });
