@@ -66,6 +66,8 @@ interface Room {
     status: string;
 }
 
+import { API_URL } from '@/lib/config';
+
 export default function GuestsPage() {
     const { socket } = useSocket();
     const [guests, setGuests] = useState<Guest[]>([]);
@@ -84,8 +86,8 @@ export default function GuestsPage() {
         const fetchData = async () => {
             try {
                 const [guestsRes, roomsRes] = await Promise.all([
-                    axios.get("http://localhost:5000/api/guests", { withCredentials: true }),
-                    axios.get("http://localhost:5000/api/rooms", { withCredentials: true }),
+                    axios.get(`${API_URL}/guests`, { withCredentials: true }),
+                    axios.get(`${API_URL}/rooms`, { withCredentials: true }),
                 ]);
                 setGuests(guestsRes.data);
                 const roomsData = roomsRes.data;
@@ -114,7 +116,7 @@ export default function GuestsPage() {
             );
             // Also update room status locally if needed, but fetching rooms again might be cleaner
             // For now, let's just re-fetch rooms to keep list accurate
-            axios.get("http://localhost:5000/api/rooms", { withCredentials: true }).then((res) => {
+            axios.get(`${API_URL}/rooms`, { withCredentials: true }).then((res) => {
                 const roomsData = res.data;
                 setRooms(roomsData.rooms || (Array.isArray(roomsData) ? roomsData : []));
             });
@@ -124,7 +126,7 @@ export default function GuestsPage() {
             setGuests((prev) =>
                 prev.map((g) => (g._id === updatedGuest._id ? updatedGuest : g))
             );
-            axios.get("http://localhost:5000/api/rooms", { withCredentials: true }).then((res) => {
+            axios.get(`${API_URL}/rooms`, { withCredentials: true }).then((res) => {
                 const roomsData = res.data;
                 setRooms(roomsData.rooms || (Array.isArray(roomsData) ? roomsData : []));
             });
@@ -157,7 +159,7 @@ export default function GuestsPage() {
 
         try {
             await axios.post(
-                "http://localhost:5000/api/guests",
+                `${API_URL}/guests`,
                 {
                     email: selectedGuest.email,
                     name: selectedGuest.name,
@@ -181,7 +183,7 @@ export default function GuestsPage() {
 
         try {
             await axios.post(
-                `http://localhost:5000/api/guests/check-out/${guestId}`,
+                `${API_URL}/guests/check-out/${guestId}`,
                 {},
                 { withCredentials: true }
             );

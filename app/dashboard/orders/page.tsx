@@ -55,6 +55,8 @@ function PaymentStatusBadge({ status }: { status?: string }) {
     );
 }
 
+import { API_URL } from '@/lib/config';
+
 export default function OrdersPage() {
     const { socket } = useSocket();
     const [orders, setOrders] = useState<Order[]>([]);
@@ -64,7 +66,7 @@ export default function OrdersPage() {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/orders', { withCredentials: true });
+                const response = await axios.get(`${API_URL}/orders`, { withCredentials: true });
                 if (response.data.orders) {
                     setOrders(response.data.orders);
                 } else if (Array.isArray(response.data)) {
@@ -125,7 +127,7 @@ export default function OrdersPage() {
 
         // API Call
         try {
-            await axios.put(`http://localhost:5000/api/orders/${draggableId}/status`, {
+            await axios.put(`${API_URL}/orders/${draggableId}/status`, {
                 status: newStatus
             }, { withCredentials: true });
         } catch (error) {

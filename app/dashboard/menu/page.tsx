@@ -27,6 +27,8 @@ interface MenuItem {
     allergyInfo?: string;
 }
 
+import { API_URL } from '@/lib/config';
+
 export default function MenuPage() {
     const { socket } = useSocket();
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -52,7 +54,7 @@ export default function MenuPage() {
     useEffect(() => {
         const fetchMenu = async () => {
             try {
-                const { data } = await axios.get('http://localhost:5000/api/menu/admin', { withCredentials: true });
+                const { data } = await axios.get(`${API_URL}/menu/admin`, { withCredentials: true });
                 setMenuItems(data);
             } catch (error) {
                 console.error("Failed to fetch menu", error);
@@ -74,12 +76,12 @@ export default function MenuPage() {
 
             if (editingId) {
                 // Edit existing
-                const { data } = await axios.put(`http://localhost:5000/api/menu/${editingId}`, payload, { withCredentials: true });
+                const { data } = await axios.put(`${API_URL}/menu/${editingId}`, payload, { withCredentials: true });
                 setMenuItems(prev => prev.map(item => item._id === editingId ? data : item));
                 toast.success("Dish updated successfully");
             } else {
                 // Create new
-                const { data } = await axios.post('http://localhost:5000/api/menu', payload, { withCredentials: true });
+                const { data } = await axios.post(`${API_URL}/menu`, payload, { withCredentials: true });
                 setMenuItems(prev => [...prev, data]);
                 toast.success("Dish added successfully");
             }
@@ -125,7 +127,7 @@ export default function MenuPage() {
 
         try {
             setUploading(true);
-            const { data } = await axios.post('http://localhost:5000/api/upload', formData, {
+            const { data } = await axios.post(`${API_URL}/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });
@@ -144,7 +146,7 @@ export default function MenuPage() {
             // Optimistic update
             setMenuItems(prev => prev.map(item => item._id === id ? { ...item, isActive: !currentStatus } : item));
 
-            await axios.put(`http://localhost:5000/api/menu/${id}`, {
+            await axios.put(`${API_URL}/menu/${id}`, {
                 isActive: !currentStatus
             }, { withCredentials: true });
         } catch (error) {
@@ -158,7 +160,7 @@ export default function MenuPage() {
         if (!window.confirm("Are you sure you want to delete this item?")) return;
 
         try {
-            await axios.delete(`http://localhost:5000/api/menu/${id}`, { withCredentials: true });
+            await axios.delete(`${API_URL}/menu/${id}`, { withCredentials: true });
             setMenuItems(prev => prev.filter(item => item._id !== id));
             toast.success("Dish deleted successfully");
         } catch (error) {

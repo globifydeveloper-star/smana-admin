@@ -16,6 +16,8 @@ interface Room {
     floor: number;
 }
 
+import { API_URL } from '@/lib/config';
+
 export default function RoomsPage() {
     const { socket } = useSocket();
     const [rooms, setRooms] = useState<Room[]>([]);
@@ -25,7 +27,7 @@ export default function RoomsPage() {
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/rooms', { withCredentials: true });
+                const response = await axios.get(`${API_URL}/rooms`, { withCredentials: true });
                 if (response.data.rooms) {
                     setRooms(response.data.rooms);
                 } else if (Array.isArray(response.data)) {
