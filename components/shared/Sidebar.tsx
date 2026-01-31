@@ -21,7 +21,7 @@ import {
 const routes = [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { label: 'Guests', icon: Users, href: '/dashboard/guests' },
-    { label: 'Check-in/Out', icon: LogOut, href: '/dashboard/check-in' }, // LogOut looks like the arrow box
+    // { label: 'Check-in/Out', icon: LogOut, href: '/dashboard/check-in' }, // LogOut looks like the arrow box
     { label: 'Service Requests', icon: ConciergeBell, href: '/dashboard/requests' },
     { label: 'Food Orders', icon: Utensils, href: '/dashboard/orders' },
     { label: 'Food Menu', icon: BookOpen, href: '/dashboard/menu' },
@@ -29,7 +29,7 @@ const routes = [
     { label: 'User & Staff', icon: UserCog, href: '/dashboard/staff' },
     { label: 'Reports', icon: BarChart3, href: '/dashboard/reports' },
     { label: 'Feedback', icon: MessageSquare, href: '/dashboard/feedback' },
-    { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
+    // { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
 ];
 
 export default function Sidebar() {

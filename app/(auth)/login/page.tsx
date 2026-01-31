@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Lock, Mail } from 'lucide-react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { API_URL } from '@/lib/config';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -25,7 +24,7 @@ export default function LoginPage() {
         setError('');
 
         try {
-            const { data } = await axios.post(`${API_URL}/auth/login`, {
+            const { data } = await axios.post('http://localhost:5000/api/auth/login', {
                 email,
                 password,
             }, { withCredentials: true });
@@ -109,7 +108,7 @@ export default function LoginPage() {
                         className="w-full h-12 bg-[#D4AF37] hover:bg-[#B5952F] text-[#0F172A] font-bold rounded-full text-base transition-all mt-4"
                         disabled={loading}
                     >
-                        {loading ? 'Authenticating...' : 'Login as Receptionist'}
+                        {loading ? 'Authenticating...' : 'Login'}
                     </Button>
 
                     <div className="text-center mt-6">

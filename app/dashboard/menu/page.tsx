@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { API_URL } from '@/lib/config';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +24,7 @@ interface MenuItem {
     imageUrl: string;
     isActive: boolean;
     allergens: string[];
+    allergyInfo?: string;
 }
 
 export default function MenuPage() {
@@ -43,7 +43,8 @@ export default function MenuPage() {
         price: '',
         category: 'Appetizer',
         imageUrl: '',
-        allergens: ''
+        allergens: '',
+        allergyInfo: ''
     });
 
     const categories = ['Appetizer', 'Main Course', 'Dessert', 'Beverage'];
@@ -51,7 +52,7 @@ export default function MenuPage() {
     useEffect(() => {
         const fetchMenu = async () => {
             try {
-                const { data } = await axios.get(`${API_URL}/menu`, { withCredentials: true });
+                const { data } = await axios.get('http://localhost:5000/api/menu/admin', { withCredentials: true });
                 setMenuItems(data);
             } catch (error) {
                 console.error("Failed to fetch menu", error);
@@ -73,12 +74,12 @@ export default function MenuPage() {
 
             if (editingId) {
                 // Edit existing
-                const { data } = await axios.put(`${API_URL}/menu/${editingId}`, payload, { withCredentials: true });
+                const { data } = await axios.put(`http://localhost:5000/api/menu/${editingId}`, payload, { withCredentials: true });
                 setMenuItems(prev => prev.map(item => item._id === editingId ? data : item));
                 toast.success("Dish updated successfully");
             } else {
                 // Create new
-                const { data } = await axios.post(`${API_URL}/menu`, payload, { withCredentials: true });
+                const { data } = await axios.post('http://localhost:5000/api/menu', payload, { withCredentials: true });
                 setMenuItems(prev => [...prev, data]);
                 toast.success("Dish added successfully");
             }
@@ -92,7 +93,7 @@ export default function MenuPage() {
     };
 
     const resetForm = () => {
-        setNewItem({ name: '', description: '', price: '', category: 'Appetizer', imageUrl: '', allergens: '' });
+        setNewItem({ name: '', description: '', price: '', category: 'Appetizer', imageUrl: '', allergens: '', allergyInfo: '' });
         setEditingId(null);
     };
 
@@ -103,7 +104,8 @@ export default function MenuPage() {
             price: item.price.toString(),
             category: item.category,
             imageUrl: item.imageUrl,
-            allergens: item.allergens.join(', ')
+            allergens: item.allergens.join(', '),
+            allergyInfo: item.allergyInfo || ''
         });
         setEditingId(item._id);
         setIsAddMode(true);
@@ -123,7 +125,7 @@ export default function MenuPage() {
 
         try {
             setUploading(true);
-            const { data } = await axios.post(`${API_URL}/upload`, formData, {
+            const { data } = await axios.post('http://localhost:5000/api/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });
@@ -142,13 +144,26 @@ export default function MenuPage() {
             // Optimistic update
             setMenuItems(prev => prev.map(item => item._id === id ? { ...item, isActive: !currentStatus } : item));
 
-            await axios.put(`${API_URL}/menu/${id}`, {
+            await axios.put(`http://localhost:5000/api/menu/${id}`, {
                 isActive: !currentStatus
             }, { withCredentials: true });
         } catch (error) {
             // Revert if error
             console.error("Failed to toggle", error);
             toast.error("Failed to update status");
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm("Are you sure you want to delete this item?")) return;
+
+        try {
+            await axios.delete(`http://localhost:5000/api/menu/${id}`, { withCredentials: true });
+            setMenuItems(prev => prev.filter(item => item._id !== id));
+            toast.success("Dish deleted successfully");
+        } catch (error) {
+            console.error("Failed to delete", error);
+            toast.error("Failed to delete item");
         }
     };
 
@@ -211,6 +226,15 @@ export default function MenuPage() {
                                     value={newItem.description}
                                     onChange={e => setNewItem({ ...newItem, description: e.target.value })}
                                     className="bg-[#1E293B] border-zinc-700"
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Allergy Info (Optional)</Label>
+                                <Input
+                                    value={newItem.allergyInfo}
+                                    onChange={e => setNewItem({ ...newItem, allergyInfo: e.target.value })}
+                                    className="bg-[#1E293B] border-zinc-700"
+                                    placeholder="e.g. Contains nuts, dairy"
                                 />
                             </div>
                             <div className="grid gap-2">
@@ -304,7 +328,12 @@ export default function MenuPage() {
                                             >
                                                 <Edit2 className="w-3 h-3 mr-2" /> Edit
                                             </Button>
-                                            <Button variant="outline" size="icon" className="border-red-900/30 text-red-500 hover:bg-red-900/20">
+                                            <Button 
+                                                variant="outline" 
+                                                size="icon" 
+                                                className="border-red-900/30 text-red-500 hover:bg-red-900/20"
+                                                onClick={() => handleDelete(item._id)}
+                                            >
                                                 <Trash2 className="w-3 h-3" />
                                             </Button>
                                         </div>

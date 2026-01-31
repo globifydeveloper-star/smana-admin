@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { BACKEND_URL } from '@/lib/config';
 
 interface SocketContextType {
     socket: Socket | null;
@@ -23,7 +22,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-const socketInstance = io(BACKEND_URL, {
+        const socketInstance = io('http://localhost:5000', {
             withCredentials: true,
             transports: ['websocket'], // force websocket for less latency
         });
