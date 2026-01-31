@@ -10,6 +10,8 @@ import { Lock, Mail } from 'lucide-react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
+import { API_URL } from '@/lib/config';
+
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -24,7 +26,7 @@ export default function LoginPage() {
         setError('');
 
         try {
-            const { data } = await axios.post('http://localhost:5000/api/auth/login', {
+            const { data } = await axios.post(`${API_URL}/auth/login`, {
                 email,
                 password,
             }, { withCredentials: true });
