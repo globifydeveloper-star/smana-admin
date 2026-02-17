@@ -30,6 +30,23 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         socketInstance.on('connect', () => {
             console.log('Socket connected:', socketInstance.id);
             setIsConnected(true);
+
+            // Join role-based room
+            const userInfoStr = localStorage.getItem('userInfo') || ((window as any).Cookies?.get('userInfo'));
+            if (userInfoStr) {
+                try {
+                    const userInfo = JSON.parse(userInfoStr);
+                    if (userInfo.role) {
+                        socketInstance.emit('join-role', userInfo.role);
+                        console.log('Joined role room:', userInfo.role);
+                    }
+                    if (userInfo._id) {
+                         socketInstance.emit('join-room', `user:${userInfo._id}`);
+                    }
+                } catch (e) {
+                    console.error('Error parsing user info for socket', e);
+                }
+            }
         });
 
         socketInstance.on('disconnect', () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/axios';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -16,18 +16,27 @@ interface Room {
     floor: number;
 }
 
-import { API_URL } from '@/lib/config';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { useUser } from '@/hooks/useUser';
+import { toast } from 'sonner';
 
 export default function RoomsPage() {
     const { socket } = useSocket();
     const [rooms, setRooms] = useState<Room[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const user = useUser();
 
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const response = await axios.get(`${API_URL}/rooms`, { withCredentials: true });
+                const response = await api.get('/rooms');
                 if (response.data.rooms) {
                     setRooms(response.data.rooms);
                 } else if (Array.isArray(response.data)) {
@@ -57,6 +66,16 @@ export default function RoomsPage() {
         };
     }, [socket]);
 
+    const handleStatusChange = async (roomId: string, newStatus: string) => {
+        try {
+            await api.put(`/rooms/${roomId}/status`, { status: newStatus });
+            toast.success("Room status updated");
+        } catch (error) {
+            console.error("Failed to update status", error);
+            toast.error("Failed to update status");
+        }
+    };
+
     // Group by floor
     const floors = [1, 2, 3, 4, 5];
     const getRoomsByFloor = (floor: number) => {
@@ -65,13 +84,32 @@ export default function RoomsPage() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'Available': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-            case 'Occupied': return 'bg-[#D4AF37]/20 text-[#D4AF37] border-[#D4AF37]/30'; // Gold
-            case 'Cleaning': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-            case 'Maintenance': return 'bg-red-500/20 text-red-400 border-red-500/30';
-            default: return 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30';
+            case 'Available': return 'text-emerald-400 border-emerald-500/30';
+            case 'Occupied': return 'text-[#D4AF37] border-[#D4AF37]/30'; // Gold
+            case 'Cleaning': return 'text-blue-400 border-blue-500/30';
+            case 'Maintenance': return 'text-red-400 border-red-500/30';
+            default: return 'text-zinc-400 border-zinc-500/30';
         }
     };
+
+    const StatusBadge = ({ status, className }: { status: string, className?: string }) => {
+        let bgClass = "";
+        switch (status) {
+             case 'Available': bgClass = 'bg-emerald-500/20'; break;
+             case 'Occupied': bgClass = 'bg-[#D4AF37]/20'; break;
+             case 'Cleaning': bgClass = 'bg-blue-500/20'; break;
+             case 'Maintenance': bgClass = 'bg-red-500/20'; break;
+             default: bgClass = 'bg-zinc-500/20'; break;
+        }
+        
+        return (
+             <Badge variant="outline" className={cn("text-[10px] justify-center", getStatusColor(status), bgClass, className)}>
+                {status}
+            </Badge>
+        );
+    }
+
+    const canEditStatus = user && ['Admin', 'Receptionist', 'Housekeeping', 'Manager'].includes(user.role);
 
     return (
         <div className="space-y-6 pt-2 h-full flex flex-col">
@@ -123,9 +161,29 @@ export default function RoomsPage() {
                                             </div>
                                             <div className="flex flex-col gap-1">
                                                 <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{room.type}</span>
-                                                <Badge variant="outline" className={cn("text-[10px] justify-center", getStatusColor(room.status))}>
-                                                    {room.status}
-                                                </Badge>
+                                                {canEditStatus ? (
+                                                    <Select
+                                                        defaultValue={room.status}
+                                                        onValueChange={(val) => handleStatusChange(room._id, val)}
+                                                    >
+                                                        <SelectTrigger className={cn("h-6 text-[10px] px-2 border-0", getStatusColor(room.status), 
+                                                            room.status === 'Available' ? 'bg-emerald-500/20' : 
+                                                            room.status === 'Occupied' ? 'bg-[#D4AF37]/20' :
+                                                            room.status === 'Cleaning' ? 'bg-blue-500/20' :
+                                                            room.status === 'Maintenance' ? 'bg-red-500/20' : 'bg-zinc-500/20'
+                                                        )}>
+                                                            <SelectValue placeholder={room.status} />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="Available">Available</SelectItem>
+                                                            <SelectItem value="Occupied">Occupied</SelectItem>
+                                                            <SelectItem value="Cleaning">Cleaning</SelectItem>
+                                                            <SelectItem value="Maintenance">Maintenance</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                ) : (
+                                                    <StatusBadge status={room.status} />
+                                                )}
                                             </div>
                                         </div>
                                     ))}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSocket } from "@/components/providers/SocketProvider";
-import axios from "axios";
+import api from "@/lib/axios";
 import {
     Search,
     MoreHorizontal,
@@ -66,8 +66,6 @@ interface Room {
     status: string;
 }
 
-import { API_URL } from '@/lib/config';
-
 export default function GuestsPage() {
     const { socket } = useSocket();
     const [guests, setGuests] = useState<Guest[]>([]);
@@ -86,8 +84,8 @@ export default function GuestsPage() {
         const fetchData = async () => {
             try {
                 const [guestsRes, roomsRes] = await Promise.all([
-                    axios.get(`${API_URL}/guests`, { withCredentials: true }),
-                    axios.get(`${API_URL}/rooms`, { withCredentials: true }),
+                    api.get('/guests'),
+                    api.get('/rooms'),
                 ]);
                 setGuests(guestsRes.data);
                 const roomsData = roomsRes.data;
@@ -116,7 +114,7 @@ export default function GuestsPage() {
             );
             // Also update room status locally if needed, but fetching rooms again might be cleaner
             // For now, let's just re-fetch rooms to keep list accurate
-            axios.get(`${API_URL}/rooms`, { withCredentials: true }).then((res) => {
+            api.get('/rooms').then((res) => {
                 const roomsData = res.data;
                 setRooms(roomsData.rooms || (Array.isArray(roomsData) ? roomsData : []));
             });
@@ -126,7 +124,7 @@ export default function GuestsPage() {
             setGuests((prev) =>
                 prev.map((g) => (g._id === updatedGuest._id ? updatedGuest : g))
             );
-            axios.get(`${API_URL}/rooms`, { withCredentials: true }).then((res) => {
+            api.get('/rooms').then((res) => {
                 const roomsData = res.data;
                 setRooms(roomsData.rooms || (Array.isArray(roomsData) ? roomsData : []));
             });
@@ -158,16 +156,15 @@ export default function GuestsPage() {
         if (!selectedGuest || !selectedRoom) return;
 
         try {
-            await axios.post(
-                `${API_URL}/guests`,
+            await api.post(
+                '/guests',
                 {
                     email: selectedGuest.email,
                     name: selectedGuest.name,
                     phone: selectedGuest.phone,
                     roomNumber: selectedRoom,
                     checkOutDate: checkOutDate,
-                },
-                { withCredentials: true }
+                }
             );
 
             setIsCheckInOpen(false);
@@ -182,10 +179,9 @@ export default function GuestsPage() {
         if (!confirm("Are you sure you want to check out this guest?")) return;
 
         try {
-            await axios.post(
-                `${API_URL}/guests/check-out/${guestId}`,
-                {},
-                { withCredentials: true }
+            await api.post(
+                `/guests/check-out/${guestId}`,
+                {}
             );
             // State updates handled by socket
         } catch (error) {
@@ -218,6 +214,7 @@ export default function GuestsPage() {
 
             {/* Guests Table */}
             <div className="flex-1 overflow-auto rounded-xl border border-[#1E293B] bg-[#0F172A] shadow-sm">
+                <div className="min-w-[900px]">
                 <table className="w-full text-sm text-left">
                     <thead className="text-xs text-[#94A3B8] uppercase bg-[#1E293B] sticky top-0 z-10">
                         <tr>
@@ -334,6 +331,7 @@ export default function GuestsPage() {
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             {/* Check-in Modal */}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import axios from 'axios';
+import api from '@/lib/axios';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -55,8 +55,6 @@ function PaymentStatusBadge({ status }: { status?: string }) {
     );
 }
 
-import { API_URL } from '@/lib/config';
-
 export default function OrdersPage() {
     const { socket } = useSocket();
     const [orders, setOrders] = useState<Order[]>([]);
@@ -66,7 +64,7 @@ export default function OrdersPage() {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const response = await axios.get(`${API_URL}/orders`, { withCredentials: true });
+                const response = await api.get('/orders');
                 if (response.data.orders) {
                     setOrders(response.data.orders);
                 } else if (Array.isArray(response.data)) {
@@ -127,9 +125,9 @@ export default function OrdersPage() {
 
         // API Call
         try {
-            await axios.put(`${API_URL}/orders/${draggableId}/status`, {
+            await api.put(`/orders/${draggableId}/status`, {
                 status: newStatus
-            }, { withCredentials: true });
+            });
         } catch (error) {
             console.error("Failed to update status", error);
         }
@@ -146,7 +144,7 @@ export default function OrdersPage() {
             <h1 className="text-3xl font-bold text-white mb-6">Kitchen Display</h1>
 
             <DragDropContext onDragEnd={onDragEnd}>
-                <div className="flex-1 grid grid-cols-5 gap-4 min-h-0">
+                <div className="flex-1 flex flex-col md:grid md:grid-cols-5 gap-4 min-h-0 overflow-y-auto md:overflow-y-hidden">
                     {Object.entries(columns).map(([columnId, column]) => (
                         <div key={columnId} className="flex flex-col h-full bg-[#1E293B]/30 rounded-xl border border-[#334155] p-4">
                             <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex justify-between">

@@ -3,6 +3,8 @@
 import { Bell } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { MobileSidebar } from '@/components/shared/MobileSidebar';
+import { NotificationBell } from './NotificationBell';
 
 export default function Topbar() {
     const [dateStr, setDateStr] = useState('');
@@ -20,17 +22,21 @@ export default function Topbar() {
     }, []);
 
     return (
-        <div className="h-20 flex items-center justify-between px-8 border-b border-[#1E293B] bg-[#0F172A]">
-            <div className="text-white font-medium text-[15px]">
-                {dateStr}
+        <div className="h-20 flex items-center justify-between px-4 md:px-8 border-b border-[#1E293B] bg-[#0F172A]">
+            <div className="flex items-center gap-x-4">
+                <MobileSidebar />
+                <div className="text-white font-medium text-[15px] hidden md:block">
+                    {dateStr}
+                </div>
+                <div className="text-white font-medium text-[13px] md:hidden">
+                    {/* Simplified date for mobile if needed, or just same */}
+                    {dateStr}
+                </div>
             </div>
 
             <div className="flex items-center gap-4">
                 {/* Notification Bell */}
-                <button className="relative p-2.5 rounded-full bg-[#1E293B] hover:bg-[#334155] transition">
-                    <Bell className="h-5 w-5 text-[#94A3B8]" />
-                    <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-[#D4AF37] border-2 border-[#1E293B]" />
-                </button>
+                <NotificationBell />
 
                 {/* Profile Avatar */}
                 <div className="h-10 w-10 rounded-full bg-[#E2E8F0] flex items-center justify-center overflow-hidden border-2 border-[#334155]">

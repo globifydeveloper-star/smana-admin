@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '@/lib/axios';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,8 +26,6 @@ interface MenuItem {
     allergens: string[];
     allergyInfo?: string;
 }
-
-import { API_URL } from '@/lib/config';
 
 export default function MenuPage() {
     const { socket } = useSocket();
@@ -54,7 +52,7 @@ export default function MenuPage() {
     useEffect(() => {
         const fetchMenu = async () => {
             try {
-                const { data } = await axios.get(`${API_URL}/menu/admin`, { withCredentials: true });
+                const { data } = await api.get('/menu/admin');
                 setMenuItems(data);
             } catch (error) {
                 console.error("Failed to fetch menu", error);
@@ -76,12 +74,12 @@ export default function MenuPage() {
 
             if (editingId) {
                 // Edit existing
-                const { data } = await axios.put(`${API_URL}/menu/${editingId}`, payload, { withCredentials: true });
+                const { data } = await api.put(`/menu/${editingId}`, payload);
                 setMenuItems(prev => prev.map(item => item._id === editingId ? data : item));
                 toast.success("Dish updated successfully");
             } else {
                 // Create new
-                const { data } = await axios.post(`${API_URL}/menu`, payload, { withCredentials: true });
+                const { data } = await api.post('/menu', payload);
                 setMenuItems(prev => [...prev, data]);
                 toast.success("Dish added successfully");
             }
@@ -127,9 +125,8 @@ export default function MenuPage() {
 
         try {
             setUploading(true);
-            const { data } = await axios.post(`${API_URL}/upload`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                withCredentials: true
+            const { data } = await api.post('/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             setNewItem(prev => ({ ...prev, imageUrl: data.url }));
             toast.success("Image uploaded successfully");
@@ -146,9 +143,9 @@ export default function MenuPage() {
             // Optimistic update
             setMenuItems(prev => prev.map(item => item._id === id ? { ...item, isActive: !currentStatus } : item));
 
-            await axios.put(`${API_URL}/menu/${id}`, {
+            await api.put(`/menu/${id}`, {
                 isActive: !currentStatus
-            }, { withCredentials: true });
+            });
         } catch (error) {
             // Revert if error
             console.error("Failed to toggle", error);
@@ -160,7 +157,7 @@ export default function MenuPage() {
         if (!window.confirm("Are you sure you want to delete this item?")) return;
 
         try {
-            await axios.delete(`${API_URL}/menu/${id}`, { withCredentials: true });
+            await api.delete(`/menu/${id}`);
             setMenuItems(prev => prev.filter(item => item._id !== id));
             toast.success("Dish deleted successfully");
         } catch (error) {
@@ -281,7 +278,7 @@ export default function MenuPage() {
             </div>
 
             <Tabs defaultValue="Appetizer" className="flex-1 flex flex-col">
-                <TabsList className="bg-[#1E293B] border border-[#334155] self-start mb-6">
+                <TabsList className="bg-[#1E293B] border border-[#334155] self-start mb-6 flex-wrap h-auto">
                     {categories.map(cat => (
                         <TabsTrigger
                             key={cat}

@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
+import { useUser } from '@/hooks/useUser';
 import { cn } from '@/lib/utils';
 import {
     LayoutDashboard,
@@ -16,24 +18,41 @@ import {
     Settings,
     MessageSquare
 } from 'lucide-react';
+import api from '@/lib/axios';
+import { API_URL } from '@/lib/config';
 
 // Exact routes from image
-const routes = [
-    { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-    { label: 'Guests', icon: Users, href: '/dashboard/guests' },
-    // { label: 'Check-in/Out', icon: LogOut, href: '/dashboard/check-in' }, // LogOut looks like the arrow box
-    { label: 'Service Requests', icon: ConciergeBell, href: '/dashboard/requests' },
-    { label: 'Food Orders', icon: Utensils, href: '/dashboard/orders' },
-    { label: 'Food Menu', icon: BookOpen, href: '/dashboard/menu' },
-    { label: 'Rooms Grid', icon: LayoutGrid, href: '/dashboard/rooms' },
-    { label: 'User & Staff', icon: UserCog, href: '/dashboard/staff' },
-    { label: 'Reports', icon: BarChart3, href: '/dashboard/reports' },
-    { label: 'Feedback', icon: MessageSquare, href: '/dashboard/feedback' },
-    // { label: 'Settings', icon: Settings, href: '/dashboard/settings' },
+const allRoutes = [
+    { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', roles: ['Admin', 'Manager'] },
+    { label: 'Guests', icon: Users, href: '/dashboard/guests', roles: ['Admin', 'Receptionist', 'Manager'] },
+    { label: 'Service Requests', icon: ConciergeBell, href: '/dashboard/requests', roles: ['Admin', 'Receptionist', 'Housekeeping', 'Manager'] },
+    { label: 'Food Orders', icon: Utensils, href: '/dashboard/orders', roles: ['Admin', 'Chef', 'Receptionist', 'Manager'] },
+    { label: 'Food Menu', icon: BookOpen, href: '/dashboard/menu', roles: ['Admin', 'Chef', 'Manager'] },
+    { label: 'Rooms Grid', icon: LayoutGrid, href: '/dashboard/rooms', roles: ['Admin', 'Receptionist', 'Housekeeping', 'Manager'] },
+    { label: 'User & Staff', icon: UserCog, href: '/dashboard/staff', roles: ['Admin', 'Manager'] },
+    { label: 'Reports', icon: BarChart3, href: '/dashboard/reports', roles: ['Admin', 'Manager'] },
+    { label: 'Feedback', icon: MessageSquare, href: '/dashboard/feedback', roles: ['Admin', 'Manager'] },
 ];
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+    const user = useUser();
+
+    const handleLogout = async () => {
+        try {
+            await api.post(`/auth/logout`);
+        } catch (error) {
+            console.error('Logout failed', error);
+        }
+        Cookies.remove('userInfo');
+        localStorage.removeItem('userInfo');
+        router.push('/login');
+    };
+
+    const routes = allRoutes.filter(route => 
+        !user || route.roles.includes(user.role)
+    );
 
     return (
         <div className="flex flex-col h-full bg-[#0F172A] text-white border-r border-[#1E293B]">
@@ -75,6 +94,17 @@ export default function Sidebar() {
                         </Link>
                     );
                 })}
+            </div>
+
+            {/* Logout Button */}
+            <div className="px-4 pb-8 mt-auto">
+                 <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-[#94A3B8] hover:text-red-400 hover:bg-white/5 transition-all duration-200"
+                >
+                    <LogOut className="h-5 w-5" />
+                    Logout
+                </button>
             </div>
         </div>
     );

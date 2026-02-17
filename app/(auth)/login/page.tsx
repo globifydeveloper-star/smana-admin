@@ -7,10 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock, Mail } from 'lucide-react';
-import axios from 'axios';
+import api from '@/lib/axios';
 import Cookies from 'js-cookie';
-
-import { API_URL } from '@/lib/config';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -26,10 +24,10 @@ export default function LoginPage() {
         setError('');
 
         try {
-            const { data } = await axios.post(`${API_URL}/auth/login`, {
+            const { data } = await api.post('/auth/login', {
                 email,
                 password,
-            }, { withCredentials: true });
+            });
 
             localStorage.setItem('userInfo', JSON.stringify(data));
             Cookies.set('userInfo', JSON.stringify(data));

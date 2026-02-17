@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "@/lib/axios";
 import { format } from "date-fns";
 import {
     Table,
@@ -32,8 +32,6 @@ interface Feedback {
     createdAt: string;
 }
 
-import { API_URL } from '@/lib/config';
-
 export default function FeedbackPage() {
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
     const [loading, setLoading] = useState(true);
@@ -44,9 +42,7 @@ export default function FeedbackPage() {
                 // Assuming Next.js proxies or absolute URL is handled. using relative /api proxy commonly setup in next.config.mjs or localhost:5000 if cors allowed.
                 // Admin usually has axios instance with baseURL. Let's assume axios is configured or use direct URL for now.
                 // Checking previous code: Admin likely talks to localhost:5000 directly via proxy or CORS.
-                const response = await axios.get(`${API_URL}/feedbacks`, { 
-                    withCredentials: true 
-                });
+                const response = await api.get('/feedbacks');
                 
                 // Handle pagination wrapper if present
                 if (response.data.feedbacks) {
@@ -89,6 +85,7 @@ export default function FeedbackPage() {
             </div>
             
             <div className="flex-1 overflow-auto rounded-xl border border-[#1E293B] bg-[#0F172A] shadow-sm">
+                <div className="min-w-[800px]">
                 <Table>
                     <TableHeader className="bg-[#1E293B] sticky top-0 z-10">
                         <TableRow className="hover:bg-transparent border-[#334155]">
@@ -137,6 +134,7 @@ export default function FeedbackPage() {
                         )}
                     </TableBody>
                 </Table>
+                </div>
             </div>
         </div>
     );

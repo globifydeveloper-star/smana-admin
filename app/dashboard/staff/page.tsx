@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/axios';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -40,8 +40,6 @@ interface Staff {
     isOnline: boolean;
 }
 
-import { API_URL } from '@/lib/config';
-
 export default function StaffPage() {
     const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
     const [loading, setLoading] = useState(true);
@@ -59,7 +57,7 @@ export default function StaffPage() {
     const fetchStaff = async () => {
         try {
             setLoading(true);
-            const { data } = await axios.get(`${API_URL}/staff`, { withCredentials: true });
+            const { data } = await api.get('/staff');
             setStaffMembers(data);
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Failed to fetch staff');
@@ -76,7 +74,7 @@ export default function StaffPage() {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await axios.post(`${API_URL}/staff`, formData, { withCredentials: true });
+            await api.post('/staff', formData);
             toast.success('Staff registered successfully');
             setIsDialogOpen(false);
             setFormData({ name: '', email: '', password: '', role: 'Receptionist' });
@@ -190,7 +188,8 @@ export default function StaffPage() {
                 </Dialog>
             </div>
 
-            <div className="rounded-xl border border-[#1E293B] bg-[#0F172A] shadow-sm overflow-hidden">
+            <div className="rounded-xl border border-[#1E293B] bg-[#0F172A] shadow-sm overflow-hidden overflow-x-auto">
+                <div className="min-w-[800px]">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-[#1E293B] text-[#94A3B8] uppercase text-xs">
                         <tr>
@@ -266,6 +265,7 @@ export default function StaffPage() {
                         ))}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     );

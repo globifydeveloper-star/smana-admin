@@ -11,7 +11,7 @@ import {
 import { useSocket } from '@/components/providers/SocketProvider';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import axios from 'axios';
+import api from '@/lib/axios';
 import { formatDistanceToNow } from 'date-fns';
 
 type ServiceRequest = {
@@ -22,13 +22,11 @@ type ServiceRequest = {
         name: string;
     };
     type: string;
-    status: 'Open' | 'In_Progress' | 'Resolved' | 'Cancelled';
-    priority: 'Low' | 'Medium' | 'High';
+    status: 'Open' | 'In Progress' | 'Resolved' | 'Cancelled';
+    priority: 'Normal' | 'Medium' | 'High';
     createdAt: string;
     message?: string;
 };
-
-import { API_URL } from '@/lib/config';
 
 export default function ServiceRequestsPage() {
     const { socket } = useSocket();
@@ -38,9 +36,7 @@ export default function ServiceRequestsPage() {
 
     const fetchRequests = async () => {
         try {
-            const { data } = await axios.get(`${API_URL}/service-requests`, {
-                withCredentials: true
-            });
+            const { data } = await api.get('/service-requests');
             setRequests(data);
         } catch (error) {
             console.error('Failed to fetch requests:', error);
@@ -77,9 +73,9 @@ export default function ServiceRequestsPage() {
                 req._id === id ? { ...req, status: newStatus as any } : req
             ));
 
-            await axios.put(`${API_URL}/service-requests/${id}/status`, {
+            await api.put(`/service-requests/${id}/status`, {
                 status: newStatus
-            }, { withCredentials: true });
+            });
         } catch (error) {
             console.error('Failed to update status:', error);
             // Revert changes if needed, but socket sync usually handles it
@@ -89,26 +85,23 @@ export default function ServiceRequestsPage() {
 
     const getPriorityVariant = (priority: string) => {
         switch (priority) {
-            case 'High': return 'urgent'; // Map High to our 'urgent' visual
-            case 'Medium': return 'high';
-            case 'Low': return 'normal';
+            case 'High': return 'urgent'; 
+            case 'Medium': return 'high'; // Reusing 'high' style for Medium as it seemed orange/warning
+            case 'Normal': return 'normal';
             default: return 'outline';
         }
     };
 
     // Map backend status to frontend display (optional, if we want different wording)
-    // Backend: Open, In_Progress, Resolved, Cancelled
+    // Backend: Open, In Progress, Resolved, Cancelled
     const formatStatus = (status: string) => {
-        return status.replace('_', ' ');
+        return status;
     };
 
     const filteredRequests = requests.filter(req => {
         if (filter === 'All') return true;
         // Priority filter
-        if (filter === 'High/Urgent') return req.priority === 'High';
-        if (filter === 'Medium') return req.priority === 'Medium';
-        if (filter === 'Low/Normal') return req.priority === 'Low';
-        return true;
+        return req.priority === filter;
     });
 
     if (loading) {
@@ -124,12 +117,12 @@ export default function ServiceRequestsPage() {
                 </div>
 
                 {/* Filter Tabs */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     {[
                         { name: 'All', color: 'bg-[#1E293B] text-white hover:bg-[#334155]' },
-                        { name: 'High/Urgent', color: 'bg-red-900/40 text-red-500 border border-red-900/50 hover:bg-red-900/60' },
+                        { name: 'High', color: 'bg-red-900/40 text-red-500 border border-red-900/50 hover:bg-red-900/60' },
                         { name: 'Medium', color: 'bg-orange-900/40 text-orange-500 border border-orange-900/50 hover:bg-orange-900/60' },
-                        { name: 'Low/Normal', color: 'bg-green-900/40 text-green-500 border border-green-900/50 hover:bg-green-900/60' }
+                        { name: 'Normal', color: 'bg-green-900/40 text-green-500 border border-green-900/50 hover:bg-green-900/60' }
                     ].map((tab) => (
                         <button
                             key={tab.name}
@@ -147,7 +140,8 @@ export default function ServiceRequestsPage() {
             </div>
 
             {/* Table Card */}
-            <div className="rounded-2xl border border-[#1E293B] bg-[#0F172A] overflow-hidden">
+            <div className="rounded-2xl border border-[#1E293B] bg-[#0F172A] overflow-hidden overflow-x-auto">
+                <div className="min-w-[1000px]">
                 {/* Table Header */}
                 <div className="grid grid-cols-12 gap-4 border-b border-[#1E293B] bg-[#0F172A] p-5 text-xs font-bold text-white tracking-wider uppercase">
                     <div className="col-span-1">Room</div>
@@ -190,7 +184,7 @@ export default function ServiceRequestsPage() {
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#1E293B] border-[#334155] text-gray-300">
                                         <SelectItem value="Open">Open</SelectItem>
-                                        <SelectItem value="In_Progress">In Progress</SelectItem>
+                                        <SelectItem value="In Progress">In Progress</SelectItem>
                                         <SelectItem value="Resolved">Resolved</SelectItem>
                                         <SelectItem value="Cancelled">Cancelled</SelectItem>
                                     </SelectContent>
@@ -204,6 +198,7 @@ export default function ServiceRequestsPage() {
                         No requests found.
                     </div>
                 )}
+                </div>
             </div>
         </div>
     );
