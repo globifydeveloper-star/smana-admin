@@ -12,6 +12,11 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "SMANA Hotel Admin",
   description: "Luxury Hotel Administration System",
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  themeColor: "#000000",
 };
 
 export default function RootLayout({

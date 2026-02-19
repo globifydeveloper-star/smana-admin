@@ -163,6 +163,9 @@ export default function StaffPage() {
                                         <SelectItem value="Manager">Manager</SelectItem>
                                         <SelectItem value="Chef">Chef</SelectItem>
                                         <SelectItem value="Housekeeping">Housekeeping</SelectItem>
+                                        <SelectItem value="IT">IT</SelectItem>
+                                        <SelectItem value="Front Office">Front Office</SelectItem>
+                                        <SelectItem value="Maintenance">Maintenance</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
