@@ -129,7 +129,7 @@ export default function DashboardPage() {
     // Filter Logic
     const canSeeOccupied = ['Admin', 'Receptionist', 'Manager'].includes(role);
     const canSeeCheckIns = ['Admin', 'Receptionist', 'Manager'].includes(role);
-    const canSeeRequests = ['Admin', 'Housekeeping', 'Manager'].includes(role);
+    const canSeeRequests = ['Admin', 'Housekeeping', 'Manager', 'IT', 'Front Office', 'Maintenance'].includes(role);
     const canSeeOrders = ['Admin', 'Chef', 'Manager'].includes(role);
 
     return (

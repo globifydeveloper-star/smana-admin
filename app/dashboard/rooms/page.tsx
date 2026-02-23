@@ -109,7 +109,7 @@ export default function RoomsPage() {
         );
     }
 
-    const canEditStatus = user && ['Admin', 'Receptionist', 'Housekeeping', 'Manager'].includes(user.role);
+    const canEditStatus = user && ['Admin', 'Receptionist', 'Housekeeping', 'Manager', 'Front Office'].includes(user.role);
 
     return (
         <div className="space-y-6 pt-2 h-full flex flex-col">

@@ -23,12 +23,12 @@ import { API_URL } from '@/lib/config';
 
 // Exact routes from image
 const allRoutes = [
-    { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', roles: ['Admin', 'Manager'] },
+    { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', roles: ['Admin', 'Manager', 'Receptionist', 'Housekeeping','Chef', 'IT', 'Front Office', 'Maintenance'] },
     { label: 'Guests', icon: Users, href: '/dashboard/guests', roles: ['Admin', 'Receptionist', 'Manager'] },
-    { label: 'Service Requests', icon: ConciergeBell, href: '/dashboard/requests', roles: ['Admin', 'Receptionist', 'Housekeeping', 'Manager'] },
+    { label: 'Service Requests', icon: ConciergeBell, href: '/dashboard/requests', roles: ['Admin', 'Receptionist', 'Housekeeping', 'Manager', 'IT', 'Front Office', 'Maintenance' ] },
     { label: 'Food Orders', icon: Utensils, href: '/dashboard/orders', roles: ['Admin', 'Chef', 'Receptionist', 'Manager'] },
     { label: 'Food Menu', icon: BookOpen, href: '/dashboard/menu', roles: ['Admin', 'Chef', 'Manager'] },
-    { label: 'Rooms Grid', icon: LayoutGrid, href: '/dashboard/rooms', roles: ['Admin', 'Receptionist', 'Housekeeping', 'Manager'] },
+    { label: 'Rooms Grid', icon: LayoutGrid, href: '/dashboard/rooms', roles: ['Admin', 'Receptionist', 'Housekeeping', 'Manager', 'IT', 'Front Office', 'Maintenance'] },
     { label: 'User & Staff', icon: UserCog, href: '/dashboard/staff', roles: ['Admin', 'Manager'] },
     { label: 'Reports', icon: BarChart3, href: '/dashboard/reports', roles: ['Admin', 'Manager'] },
     { label: 'Feedback', icon: MessageSquare, href: '/dashboard/feedback', roles: ['Admin', 'Manager'] },
