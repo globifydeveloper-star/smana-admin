@@ -95,15 +95,15 @@ export default function RoomsPage() {
     const StatusBadge = ({ status, className }: { status: string, className?: string }) => {
         let bgClass = "";
         switch (status) {
-             case 'Available': bgClass = 'bg-emerald-500/20'; break;
-             case 'Occupied': bgClass = 'bg-[#D4AF37]/20'; break;
-             case 'Cleaning': bgClass = 'bg-blue-500/20'; break;
-             case 'Maintenance': bgClass = 'bg-red-500/20'; break;
-             default: bgClass = 'bg-zinc-500/20'; break;
+            case 'Available': bgClass = 'bg-emerald-500/20'; break;
+            case 'Occupied': bgClass = 'bg-[#D4AF37]/20'; break;
+            case 'Cleaning': bgClass = 'bg-blue-500/20'; break;
+            case 'Maintenance': bgClass = 'bg-red-500/20'; break;
+            default: bgClass = 'bg-zinc-500/20'; break;
         }
-        
+
         return (
-             <Badge variant="outline" className={cn("text-[10px] justify-center", getStatusColor(status), bgClass, className)}>
+            <Badge variant="outline" className={cn("text-[10px] justify-center", getStatusColor(status), bgClass, className)}>
                 {status}
             </Badge>
         );
@@ -166,11 +166,11 @@ export default function RoomsPage() {
                                                         defaultValue={room.status}
                                                         onValueChange={(val) => handleStatusChange(room._id, val)}
                                                     >
-                                                        <SelectTrigger className={cn("h-6 text-[10px] px-2 border-0", getStatusColor(room.status), 
-                                                            room.status === 'Available' ? 'bg-emerald-500/20' : 
-                                                            room.status === 'Occupied' ? 'bg-[#D4AF37]/20' :
-                                                            room.status === 'Cleaning' ? 'bg-blue-500/20' :
-                                                            room.status === 'Maintenance' ? 'bg-red-500/20' : 'bg-zinc-500/20'
+                                                        <SelectTrigger className={cn("h-6 text-[10px] px-2 border-0", getStatusColor(room.status),
+                                                            room.status === 'Available' ? 'bg-emerald-500/20' :
+                                                                room.status === 'Occupied' ? 'bg-[#D4AF37]/20' :
+                                                                    room.status === 'Cleaning' ? 'bg-blue-500/20' :
+                                                                        room.status === 'Maintenance' ? 'bg-red-500/20' : 'bg-zinc-500/20'
                                                         )}>
                                                             <SelectValue placeholder={room.status} />
                                                         </SelectTrigger>

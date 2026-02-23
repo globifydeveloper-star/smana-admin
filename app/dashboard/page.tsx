@@ -10,7 +10,7 @@ import api from '@/lib/axios';
 export default function DashboardPage() {
     const { socket } = useSocket();
     const [role, setRole] = useState<string>('Admin'); // Default to Admin
-    
+
     // Stats
     const [stats, setStats] = useState({
         occupied: 0,
@@ -41,7 +41,7 @@ export default function DashboardPage() {
                 // Determine what to fetch based on role? Or just fetch all for now since it's light.
                 // In a real app we'd have a dashboard-stats endpoint.
                 // Simulating fetches or fetching real counts:
-                
+
                 const [roomsRes, ordersRes, requestsRes, guestsRes] = await Promise.allSettled([
                     api.get('/rooms'),
                     api.get('/orders'),
@@ -50,13 +50,13 @@ export default function DashboardPage() {
                 ]);
 
                 let newStats = { ...stats };
-                
+
                 if (roomsRes.status === 'fulfilled') {
                     const rooms = roomsRes.value.data.rooms;
                     newStats.occupied = rooms.filter((r: any) => r.status === 'Occupied').length;
                     newStats.totalRooms = roomsRes.value.data.total || 100;
                 }
-                
+
                 if (ordersRes.status === 'fulfilled') {
                     const orders = ordersRes.value.data.orders;
                     newStats.orders = orders.filter((o: any) => o.status !== 'Delivered' && o.status !== 'Cancelled').length;
@@ -68,10 +68,10 @@ export default function DashboardPage() {
                 }
 
                 if (guestsRes.status === 'fulfilled') {
-                     // Approximate check-ins today
-                     const guests = guestsRes.value.data;
-                     const today = new Date().toDateString();
-                     newStats.checkIns = guests.filter((g: any) => g.isCheckedIn && new Date(g.updatedAt).toDateString() === today).length;
+                    // Approximate check-ins today
+                    const guests = guestsRes.value.data;
+                    const today = new Date().toDateString();
+                    newStats.checkIns = guests.filter((g: any) => g.isCheckedIn && new Date(g.updatedAt).toDateString() === today).length;
                 }
 
                 setStats(newStats);
@@ -96,7 +96,7 @@ export default function DashboardPage() {
 
         socket.on('guest-checked-out', (data: any) => {
             setStats(prev => ({ ...prev, occupied: Math.max(0, prev.occupied - 1) }));
-             addActivity(`${data.name} checked out.`, 'check-out');
+            addActivity(`${data.name} checked out.`, 'check-out');
         });
 
         socket.on('new-food-order', (data: any) => {
@@ -198,9 +198,9 @@ export default function DashboardPage() {
                 <h2 className="text-lg font-medium text-white mb-8">Recent Activity</h2>
 
                 <div className="relative space-y-8 pl-4">
-                     {/* Vertical Timeline Line */}
+                    {/* Vertical Timeline Line */}
                     <div className="absolute left-[34px] top-4 bottom-4 w-[1px] bg-[#334155]" />
-                    
+
                     {activities.length === 0 && (
                         <div className="text-[#64748B] text-sm">No recent activity</div>
                     )}
@@ -212,7 +212,7 @@ export default function DashboardPage() {
                         if (item.type === 'order' && !canSeeOrders) return null;
                         if (item.type === 'request' && !canSeeRequests) return null;
                         if ((item.type === 'check-in' || item.type === 'check-out') && !canSeeCheckIns) return null;
-                        
+
                         let Icon = ArrowRight;
                         const iconColor = "text-[#D4AF37]";
 

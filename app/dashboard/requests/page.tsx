@@ -85,7 +85,7 @@ export default function ServiceRequestsPage() {
 
     const getPriorityVariant = (priority: string) => {
         switch (priority) {
-            case 'High': return 'urgent'; 
+            case 'High': return 'urgent';
             case 'Medium': return 'high'; // Reusing 'high' style for Medium as it seemed orange/warning
             case 'Normal': return 'normal';
             default: return 'outline';
@@ -142,62 +142,62 @@ export default function ServiceRequestsPage() {
             {/* Table Card */}
             <div className="rounded-2xl border border-[#1E293B] bg-[#0F172A] overflow-hidden overflow-x-auto">
                 <div className="min-w-[1000px]">
-                {/* Table Header */}
-                <div className="grid grid-cols-12 gap-4 border-b border-[#1E293B] bg-[#0F172A] p-5 text-xs font-bold text-white tracking-wider uppercase">
-                    <div className="col-span-1">Room</div>
-                    <div className="col-span-2">Guest</div>
-                    <div className="col-span-3">Request Type</div>
-                    <div className="col-span-2">Submitted</div>
-                    <div className="col-span-2">Priority</div>
-                    <div className="col-span-2">Status</div>
-                </div>
-
-                {/* Table Body */}
-                <div className="divide-y divide-[#1E293B]">
-                    {filteredRequests.map((req) => (
-                        <div key={req._id} className="grid grid-cols-12 gap-4 p-5 items-center hover:bg-white/5 transition-colors">
-                            <div className="col-span-1 text-white font-medium text-[15px]">{req.roomNumber}</div>
-                            <div className="col-span-2 text-[#94A3B8] text-[15px]">
-                                {req.guestId?.name || 'Unknown Guest'}
-                            </div>
-                            <div className="col-span-3">
-                                <span className="text-white text-[15px] block">{req.type}</span>
-                                {req.message && (
-                                    <span className="text-xs text-gray-500 truncate block mt-1">{req.message}</span>
-                                )}
-                            </div>
-                            <div className="col-span-2 text-[#94A3B8] text-[15px]">
-                                {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}
-                            </div>
-                            <div className="col-span-2">
-                                <Badge variant={getPriorityVariant(req.priority)} className="rounded-md px-3 font-normal">
-                                    {req.priority}
-                                </Badge>
-                            </div>
-                            <div className="col-span-2">
-                                <Select
-                                    value={req.status}
-                                    onValueChange={(val) => handleStatusChange(req._id, val)}
-                                >
-                                    <SelectTrigger className="w-full h-8 bg-[#1E293B] border-[#334155] text-gray-300">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-[#1E293B] border-[#334155] text-gray-300">
-                                        <SelectItem value="Open">Open</SelectItem>
-                                        <SelectItem value="In Progress">In Progress</SelectItem>
-                                        <SelectItem value="Resolved">Resolved</SelectItem>
-                                        <SelectItem value="Cancelled">Cancelled</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                {filteredRequests.length === 0 && (
-                    <div className="p-8 text-center text-gray-500">
-                        No requests found.
+                    {/* Table Header */}
+                    <div className="grid grid-cols-12 gap-4 border-b border-[#1E293B] bg-[#0F172A] p-5 text-xs font-bold text-white tracking-wider uppercase">
+                        <div className="col-span-1">Room</div>
+                        <div className="col-span-2">Guest</div>
+                        <div className="col-span-3">Request Type</div>
+                        <div className="col-span-2">Submitted</div>
+                        <div className="col-span-2">Priority</div>
+                        <div className="col-span-2">Status</div>
                     </div>
-                )}
+
+                    {/* Table Body */}
+                    <div className="divide-y divide-[#1E293B]">
+                        {filteredRequests.map((req) => (
+                            <div key={req._id} className="grid grid-cols-12 gap-4 p-5 items-center hover:bg-white/5 transition-colors">
+                                <div className="col-span-1 text-white font-medium text-[15px]">{req.roomNumber}</div>
+                                <div className="col-span-2 text-[#94A3B8] text-[15px]">
+                                    {req.guestId?.name || 'Unknown Guest'}
+                                </div>
+                                <div className="col-span-3">
+                                    <span className="text-white text-[15px] block">{req.type}</span>
+                                    {req.message && (
+                                        <span className="text-xs text-gray-500 truncate block mt-1">{req.message}</span>
+                                    )}
+                                </div>
+                                <div className="col-span-2 text-[#94A3B8] text-[15px]">
+                                    {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}
+                                </div>
+                                <div className="col-span-2">
+                                    <Badge variant={getPriorityVariant(req.priority)} className="rounded-md px-3 font-normal">
+                                        {req.priority}
+                                    </Badge>
+                                </div>
+                                <div className="col-span-2">
+                                    <Select
+                                        value={req.status}
+                                        onValueChange={(val) => handleStatusChange(req._id, val)}
+                                    >
+                                        <SelectTrigger className="w-full h-8 bg-[#1E293B] border-[#334155] text-gray-300">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[#1E293B] border-[#334155] text-gray-300">
+                                            <SelectItem value="Open">Open</SelectItem>
+                                            <SelectItem value="In Progress">In Progress</SelectItem>
+                                            <SelectItem value="Resolved">Resolved</SelectItem>
+                                            <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {filteredRequests.length === 0 && (
+                        <div className="p-8 text-center text-gray-500">
+                            No requests found.
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

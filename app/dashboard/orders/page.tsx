@@ -39,15 +39,15 @@ const columns = {
 // Payment status badge component
 function PaymentStatusBadge({ status }: { status?: string }) {
     if (!status) return null;
-    
+
     const variants: Record<string, { color: string; label: string }> = {
         success: { color: 'bg-green-500/20 text-green-400 border-green-500/30', label: '✓ PAID' },
         pending: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', label: '⏳ PENDING' },
         failed: { color: 'bg-red-500/20 text-red-400 border-red-500/30', label: '✗ FAILED' }
     };
-    
+
     const variant = variants[status] || variants.pending;
-    
+
     return (
         <Badge className={`${variant.color} text-[10px] font-bold px-2 py-0.5 border`}>
             {variant.label}
@@ -70,7 +70,7 @@ export default function OrdersPage() {
                 } else if (Array.isArray(response.data)) {
                     setOrders(response.data);
                 } else {
-                     setOrders([]);
+                    setOrders([]);
                 }
             } catch (error) {
                 console.error("Fetch orders error", error);
@@ -109,7 +109,7 @@ export default function OrdersPage() {
         ) return;
 
         const newStatus = destination.droppableId;
-        
+
         // Prevent dragging cancelled orders
         const order = orders.find(o => o._id === draggableId);
         if (order?.status === 'Cancelled') {
@@ -162,9 +162,9 @@ export default function OrdersPage() {
                                         className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-[#334155]"
                                     >
                                         {getOrdersByStatus(columnId).map((order, index) => (
-                                            <Draggable 
-                                                key={order._id} 
-                                                draggableId={order._id} 
+                                            <Draggable
+                                                key={order._id}
+                                                draggableId={order._id}
                                                 index={index}
                                                 isDragDisabled={order.status === 'Cancelled'}
                                             >
@@ -210,7 +210,7 @@ export default function OrdersPage() {
                                                                     {order.currency || 'AED'} {order.totalAmount}
                                                                 </span>
                                                             </div>
-                                                            
+
                                                             {/* Payment Details */}
                                                             {order.paymentMethod === 'HyperPay' && (
                                                                 <div className="pt-2 border-t border-[#334155]/50 flex items-start gap-2">
@@ -225,7 +225,7 @@ export default function OrdersPage() {
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                            
+
                                                             {/* Cancelled indicator */}
                                                             {order.status === 'Cancelled' && (
                                                                 <div className="flex items-center gap-2 text-xs text-red-400 pt-2 border-t border-red-500/20">

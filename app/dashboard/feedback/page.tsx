@@ -43,12 +43,12 @@ export default function FeedbackPage() {
                 // Admin usually has axios instance with baseURL. Let's assume axios is configured or use direct URL for now.
                 // Checking previous code: Admin likely talks to localhost:5000 directly via proxy or CORS.
                 const response = await api.get('/feedbacks');
-                
+
                 // Handle pagination wrapper if present
                 if (response.data.feedbacks) {
-                     setFeedbacks(response.data.feedbacks);
+                    setFeedbacks(response.data.feedbacks);
                 } else if (Array.isArray(response.data)) {
-                     setFeedbacks(response.data);
+                    setFeedbacks(response.data);
                 }
             } catch (error) {
                 console.error("Failed to fetch feedbacks", error);
@@ -83,57 +83,57 @@ export default function FeedbackPage() {
                     <p className="text-[#94A3B8]">Recent ratings and comments from verified guests.</p>
                 </div>
             </div>
-            
+
             <div className="flex-1 overflow-auto rounded-xl border border-[#1E293B] bg-[#0F172A] shadow-sm">
                 <div className="min-w-[800px]">
-                <Table>
-                    <TableHeader className="bg-[#1E293B] sticky top-0 z-10">
-                        <TableRow className="hover:bg-transparent border-[#334155]">
-                            <TableHead className="w-[100px] text-[#94A3B8]">Room</TableHead>
-                            <TableHead className="text-[#94A3B8]">Guest</TableHead>
-                            <TableHead className="text-[#94A3B8]">Rating</TableHead>
-                            <TableHead className="max-w-[300px] text-[#94A3B8]">Description</TableHead>
-                            <TableHead className="text-[#94A3B8]">Date</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody className="text-zinc-300">
-                        {feedbacks.length === 0 ? (
+                    <Table>
+                        <TableHeader className="bg-[#1E293B] sticky top-0 z-10">
                             <TableRow className="hover:bg-transparent border-[#334155]">
-                                <TableCell colSpan={5} className="text-center py-8 text-zinc-500">
-                                    No feedback received yet.
-                                </TableCell>
+                                <TableHead className="w-[100px] text-[#94A3B8]">Room</TableHead>
+                                <TableHead className="text-[#94A3B8]">Guest</TableHead>
+                                <TableHead className="text-[#94A3B8]">Rating</TableHead>
+                                <TableHead className="max-w-[300px] text-[#94A3B8]">Description</TableHead>
+                                <TableHead className="text-[#94A3B8]">Date</TableHead>
                             </TableRow>
-                        ) : (
-                            feedbacks.map((feedback) => (
-                                <TableRow key={feedback._id} className="hover:bg-[#1E293B]/50 border-[#334155] transition-colors">
-                                    <TableCell className="font-mono text-[#D4AF37] font-medium">
-                                        {feedback.roomNumber}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-0.5">
-                                            <span className="font-medium text-white">{feedback.name}</span>
-                                            {feedback.email && <span className="text-xs text-zinc-500">{feedback.email}</span>}
-                                            {feedback.phone && <span className="text-xs text-zinc-500">{feedback.phone}</span>}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary" className={`flex w-fit items-center gap-1 border-0 ${getRatingColor(feedback.rating)}`}>
-                                            {feedback.rating.toFixed(1)} <Star className="h-3 w-3 fill-current" />
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="max-w-[300px] text-zinc-400">
-                                        <div className="line-clamp-2" title={feedback.description}>
-                                            {feedback.description}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-sm text-zinc-500 tabular-nums">
-                                        {format(new Date(feedback.createdAt), "MMM d, yyyy h:mm a")}
+                        </TableHeader>
+                        <TableBody className="text-zinc-300">
+                            {feedbacks.length === 0 ? (
+                                <TableRow className="hover:bg-transparent border-[#334155]">
+                                    <TableCell colSpan={5} className="text-center py-8 text-zinc-500">
+                                        No feedback received yet.
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                            ) : (
+                                feedbacks.map((feedback) => (
+                                    <TableRow key={feedback._id} className="hover:bg-[#1E293B]/50 border-[#334155] transition-colors">
+                                        <TableCell className="font-mono text-[#D4AF37] font-medium">
+                                            {feedback.roomNumber}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="font-medium text-white">{feedback.name}</span>
+                                                {feedback.email && <span className="text-xs text-zinc-500">{feedback.email}</span>}
+                                                {feedback.phone && <span className="text-xs text-zinc-500">{feedback.phone}</span>}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="secondary" className={`flex w-fit items-center gap-1 border-0 ${getRatingColor(feedback.rating)}`}>
+                                                {feedback.rating.toFixed(1)} <Star className="h-3 w-3 fill-current" />
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="max-w-[300px] text-zinc-400">
+                                            <div className="line-clamp-2" title={feedback.description}>
+                                                {feedback.description}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-sm text-zinc-500 tabular-nums">
+                                            {format(new Date(feedback.createdAt), "MMM d, yyyy h:mm a")}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
                 </div>
             </div>
         </div>

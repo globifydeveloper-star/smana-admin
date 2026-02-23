@@ -12,6 +12,8 @@ import {
     Calendar as CalendarIcon,
     Phone,
     DoorClosed,
+    Ban,
+    Unlock,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -57,6 +59,7 @@ interface Guest {
     roomNumber?: string;
     checkInDate?: string;
     checkOutDate?: string;
+    isBlocked?: boolean;
 }
 
 interface Room {
@@ -78,6 +81,7 @@ export default function GuestsPage() {
     const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
     const [selectedRoom, setSelectedRoom] = useState<string>("");
     const [checkOutDate, setCheckOutDate] = useState<Date | undefined>();
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     // Fetch Data
     useEffect(() => {
@@ -85,7 +89,7 @@ export default function GuestsPage() {
             try {
                 const [guestsRes, roomsRes] = await Promise.all([
                     api.get('/guests'),
-                    api.get('/rooms'),
+                    api.get('/rooms?limit=1000'),
                 ]);
                 setGuests(guestsRes.data);
                 const roomsData = roomsRes.data;
@@ -190,8 +194,28 @@ export default function GuestsPage() {
         }
     };
 
+    const handleBlockToggle = async (guest: Guest) => {
+        const action = guest.isBlocked ? "unblock" : "block";
+        if (!confirm(`Are you sure you want to ${action} this guest?`)) return;
+
+        try {
+            const res = await api.patch(`/guests/${guest._id}/block`);
+            // Update local state immediately as socket might not broadcast this specific change yet
+            // (Unless we add socket emit for block in backend, currently we didn't)
+            setGuests((prev) =>
+                prev.map((g) =>
+                    g._id === guest._id ? { ...g, isBlocked: res.data.isBlocked } : g
+                )
+            );
+        } catch (error) {
+            console.error(`Failed to ${action} guest:`, error);
+            alert(`Failed to ${action} guest. Please try again.`);
+        }
+    };
+
     // Available Rooms (only Available ones)
     const availableRooms = Array.isArray(rooms) ? rooms.filter((r) => r.status === "Available") : [];
+    console.log("Available Rooms:", availableRooms);
 
     return (
         <div className="space-y-6 pt-2 h-full flex flex-col">
@@ -215,122 +239,144 @@ export default function GuestsPage() {
             {/* Guests Table */}
             <div className="flex-1 overflow-auto rounded-xl border border-[#1E293B] bg-[#0F172A] shadow-sm">
                 <div className="min-w-[900px]">
-                <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-[#94A3B8] uppercase bg-[#1E293B] sticky top-0 z-10">
-                        <tr>
-                            <th className="px-6 py-4 font-medium">Guest</th>
-                            <th className="px-6 py-4 font-medium">Contact</th>
-                            <th className="px-6 py-4 font-medium">Status</th>
-                            <th className="px-6 py-4 font-medium">Room</th>
-                            <th className="px-6 py-4 font-medium w-16"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#1E293B]">
-                        {loading ? (
+                    <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-[#94A3B8] uppercase bg-[#1E293B] sticky top-0 z-10">
                             <tr>
-                                <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
-                                    Loading guests...
-                                </td>
+                                <th className="px-6 py-4 font-medium">Guest</th>
+                                <th className="px-6 py-4 font-medium">Contact</th>
+                                <th className="px-6 py-4 font-medium">Status</th>
+                                <th className="px-6 py-4 font-medium">Room</th>
+                                <th className="px-6 py-4 font-medium w-16"></th>
                             </tr>
-                        ) : filteredGuests.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
-                                    No guests found.
-                                </td>
-                            </tr>
-                        ) : (
-                            filteredGuests.map((guest) => (
-                                <tr
-                                    key={guest._id}
-                                    className="hover:bg-[#1E293B]/50 transition-colors group"
-                                >
-                                    {/* Name & Avatar */}
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-9 w-9 border border-[#334155]">
-                                                <AvatarImage
-                                                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${guest.name}&backgroundColor=1e293b&textColor=D4AF37`}
-                                                />
-                                                <AvatarFallback className="bg-[#1E293B] text-[#D4AF37]">
-                                                    {guest.name[0]}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <span className="font-medium text-white">
-                                                {guest.name}
-                                            </span>
-                                        </div>
-                                    </td>
-
-                                    {/* Phone */}
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2 text-[#94A3B8]">
-                                            <Phone className="h-3.5 w-3.5" />
-                                            {guest.phone}
-                                        </div>
-                                    </td>
-
-                                    {/* Status */}
-                                    <td className="px-6 py-4">
-                                        <Badge
-                                            variant="outline"
-                                            className={cn(
-                                                "font-normal border",
-                                                guest.isCheckedIn
-                                                    ? "bg-green-500/10 text-green-400 border-green-500/20"
-                                                    : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
-                                            )}
-                                        >
-                                            {guest.isCheckedIn ? "Checked In" : "Not Checked In"}
-                                        </Badge>
-                                    </td>
-
-                                    {/* Room */}
-                                    <td className="px-6 py-4">
-                                        {guest.roomNumber ? (
-                                            <span className="text-[#D4AF37] font-medium font-mono text-base">
-                                                {guest.roomNumber}
-                                            </span>
-                                        ) : (
-                                            <span className="text-zinc-600">-</span>
-                                        )}
-                                    </td>
-
-                                    {/* Actions */}
-                                    <td className="px-6 py-4 text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-[#334155]"
-                                                >
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="bg-[#1E293B] border-[#334155] text-white">
-                                                {!guest.isCheckedIn ? (
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleOpenCheckIn(guest)}
-                                                        className="focus:bg-[#334155] focus:text-[#D4AF37] cursor-pointer"
-                                                    >
-                                                        <Check className="mr-2 h-4 w-4" /> Check In
-                                                    </DropdownMenuItem>
-                                                ) : (
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleCheckOut(guest._id)}
-                                                        className="focus:bg-[#334155] focus:text-red-400 cursor-pointer text-red-400"
-                                                    >
-                                                        <X className="mr-2 h-4 w-4" /> Check Out
-                                                    </DropdownMenuItem>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                        </thead>
+                        <tbody className="divide-y divide-[#1E293B]">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
+                                        Loading guests...
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : filteredGuests.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
+                                        No guests found.
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredGuests.map((guest) => (
+                                    <tr
+                                        key={guest._id}
+                                        className="hover:bg-[#1E293B]/50 transition-colors group"
+                                    >
+                                        {/* Name & Avatar */}
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-9 w-9 border border-[#334155]">
+                                                    <AvatarImage
+                                                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${guest.name}&backgroundColor=1e293b&textColor=D4AF37`}
+                                                    />
+                                                    <AvatarFallback className="bg-[#1E293B] text-[#D4AF37]">
+                                                        {guest.name[0]}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <span className={cn("font-medium text-white", guest.isBlocked && "text-red-400 line-through")}>
+                                                        {guest.name}
+                                                    </span>
+                                                    {guest.isBlocked && (
+                                                        <span className="text-[10px] text-red-500 uppercase font-bold tracking-wider">Blocked</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {/* Phone */}
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2 text-[#94A3B8]">
+                                                <Phone className="h-3.5 w-3.5" />
+                                                {guest.phone}
+                                            </div>
+                                        </td>
+
+                                        {/* Status */}
+                                        <td className="px-6 py-4">
+                                            <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                    "font-normal border",
+                                                    guest.isCheckedIn
+                                                        ? "bg-green-500/10 text-green-400 border-green-500/20"
+                                                        : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                                                )}
+                                            >
+                                                {guest.isCheckedIn ? "Checked In" : "Not Checked In"}
+                                            </Badge>
+                                        </td>
+
+                                        {/* Room */}
+                                        <td className="px-6 py-4">
+                                            {guest.roomNumber ? (
+                                                <span className="text-[#D4AF37] font-medium font-mono text-base">
+                                                    {guest.roomNumber}
+                                                </span>
+                                            ) : (
+                                                <span className="text-zinc-600">-</span>
+                                            )}
+                                        </td>
+
+                                        {/* Actions */}
+                                        <td className="px-6 py-4 text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-[#334155]"
+                                                    >
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="bg-[#1E293B] border-[#334155] text-white">
+                                                    {!guest.isCheckedIn ? (
+                                                        <DropdownMenuItem
+                                                            onClick={() => handleOpenCheckIn(guest)}
+                                                            className="focus:bg-[#334155] focus:text-[#D4AF37] cursor-pointer"
+                                                        >
+                                                            <Check className="mr-2 h-4 w-4" /> Check In
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem
+                                                            onClick={() => handleCheckOut(guest._id)}
+                                                            className="focus:bg-[#334155] focus:text-red-400 cursor-pointer text-red-400"
+                                                        >
+                                                            <X className="mr-2 h-4 w-4" /> Check Out
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleBlockToggle(guest)}
+                                                        className={cn(
+                                                            "focus:bg-[#334155] cursor-pointer",
+                                                            guest.isBlocked ? "text-green-400 focus:text-green-400" : "text-red-400 focus:text-red-400"
+                                                        )}
+                                                    >
+                                                        {guest.isBlocked ? (
+                                                            <>
+                                                                <Unlock className="mr-2 h-4 w-4" /> Unblock
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Ban className="mr-2 h-4 w-4" /> Block
+                                                            </>
+                                                        )}
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -364,7 +410,7 @@ export default function GuestsPage() {
                                         <div className="p-2 text-sm text-zinc-500">No rooms available</div>
                                     ) : (
                                         availableRooms.map((room) => (
-                                            <SelectItem key={room._id} value={room.roomNumber} className="focus:bg-[#334155] focus:text-[#D4AF37]">
+                                            <SelectItem key={room._id} value={room.roomNumber} className="focus:bg-[#334155] focus:text-[#D4AF37] text-white">
                                                 Room {room.roomNumber} ({room.type})
                                             </SelectItem>
                                         ))
@@ -376,7 +422,7 @@ export default function GuestsPage() {
                         {/* Check-out Date */}
                         <div className="grid gap-2">
                             <Label className="text-zinc-300">Checkout Date</Label>
-                            <Popover>
+                            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen} modal={true}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant={"outline"}
@@ -389,18 +435,17 @@ export default function GuestsPage() {
                                         {checkOutDate ? format(checkOutDate, "PPP") : <span>Pick a date</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-[#1E293B] border-[#334155]" align="start">
+                                <PopoverContent className="w-auto p-0 bg-[#1E293B] border-[#334155] z-[105]" align="start">
                                     <Calendar
                                         mode="single"
                                         selected={checkOutDate}
                                         onSelect={(date) => {
-                                            setCheckOutDate(date);
-                                            // Close logic would require controlling the Popover state, 
-                                            // but standard Radix popover closes on click outside. 
-                                            // For now, this is standard behavior.
-                                            // If auto-close is needed, I need a state variable `isCalendarOpen`.
+                                            if (date) {
+                                                setCheckOutDate(date);
+                                                setIsCalendarOpen(false);
+                                            }
                                         }}
-                                        initialFocus
+                                        required
                                         className="bg-[#0F172A] text-white"
                                     />
                                 </PopoverContent>
