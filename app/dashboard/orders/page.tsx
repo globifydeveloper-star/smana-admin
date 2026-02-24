@@ -110,12 +110,7 @@ export default function OrdersPage() {
 
         const newStatus = destination.droppableId;
 
-        // Prevent dragging cancelled orders
         const order = orders.find(o => o._id === draggableId);
-        if (order?.status === 'Cancelled') {
-            console.log('Cannot move cancelled orders');
-            return;
-        }
 
         // Optimistic UI Update
         const updatedOrders = orders.map(order =>
@@ -159,14 +154,14 @@ export default function OrdersPage() {
                                     <div
                                         {...provided.droppableProps}
                                         ref={provided.innerRef}
-                                        className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-[#334155]"
+                                        className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-[#334155] min-h-[100px]"
                                     >
                                         {getOrdersByStatus(columnId).map((order, index) => (
                                             <Draggable
                                                 key={order._id}
                                                 draggableId={order._id}
                                                 index={index}
-                                                isDragDisabled={order.status === 'Cancelled'}
+                                                isDragDisabled={false}
                                             >
                                                 {(provided, snapshot) => (
                                                     <Card
