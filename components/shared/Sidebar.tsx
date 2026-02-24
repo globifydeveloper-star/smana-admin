@@ -30,7 +30,7 @@ const allRoutes = [
     { label: 'Food Menu', icon: BookOpen, href: '/dashboard/menu', roles: ['Admin', 'Chef', 'Manager'] },
     { label: 'Rooms Grid', icon: LayoutGrid, href: '/dashboard/rooms', roles: ['Admin', 'Receptionist', 'Housekeeping', 'Manager', 'IT', 'Front Office', 'Maintenance'] },
     { label: 'User & Staff', icon: UserCog, href: '/dashboard/staff', roles: ['Admin', 'Manager'] },
-    { label: 'Reports', icon: BarChart3, href: '/dashboard/reports', roles: ['Admin', 'Manager'] },
+    // { label: 'Reports', icon: BarChart3, href: '/dashboard/reports', roles: ['Admin', 'Manager'] },
     { label: 'Feedback', icon: MessageSquare, href: '/dashboard/feedback', roles: ['Admin', 'Manager'] },
 ];
 
