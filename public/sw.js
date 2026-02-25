@@ -9,7 +9,7 @@
  *  - Navigation requests                       → Network-First with offline fallback
  */
 
-const CACHE_VERSION = "v1.0.0"; // Bump this on every production deploy
+const CACHE_VERSION = "v1.1.0"; // Bump this on every production deploy
 const STATIC_CACHE = `smana-admin-static-${CACHE_VERSION}`;
 const API_CACHE = `smana-admin-api-${CACHE_VERSION}`;
 
@@ -20,7 +20,12 @@ const PRE_CACHE_ASSETS = [
     "/",
     "/offline.html",
     "/manifest.json",
+    "/icon-96.png",
+    "/icon-192.png",
+    "/icon-512.png",
     "/smana_logo.png",
+    "/screenshot-desktop.png",
+    "/screenshot-mobile.png",
 ];
 
 // ---------------------------------------------------------------------------
@@ -102,6 +107,22 @@ self.addEventListener("activate", (event) => {
             )
             .then(() => self.clients.claim()) // Take control of all tabs immediately
     );
+});
+
+// ---------------------------------------------------------------------------
+// MESSAGE — handle commands sent from the page (e.g. from ServiceWorkerRegistrar)
+//
+// SKIP_WAITING: When ServiceWorkerRegistrar detects a new SW version is
+// waiting (state === 'installed'), it posts this message to make the new SW
+// take over immediately instead of waiting for all tabs to close.
+//
+// Without this handler the registrar's postMessage({ type: 'SKIP_WAITING' })
+// would have no effect, leaving the new SW stuck in 'waiting' state.
+// ---------------------------------------------------------------------------
+self.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "SKIP_WAITING") {
+        self.skipWaiting();
+    }
 });
 
 // ---------------------------------------------------------------------------
