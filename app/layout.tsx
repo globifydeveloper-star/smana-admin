@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Lato } from "next/font/google";
 import { SocketProvider } from "@/components/providers/SocketProvider";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import "./globals.css";
 
 const lato = Lato({
@@ -13,10 +14,25 @@ export const metadata: Metadata = {
   title: "SMANA Hotel Admin",
   description: "Luxury Hotel Administration System",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "SMANA Admin",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    apple: "/smana_logo.png",
+  },
 };
 
-export const viewport = {
-  themeColor: "#000000",
+export const viewport: Viewport = {
+  themeColor: "#6366f1",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -33,6 +49,9 @@ export default function RootLayout({
         <SocketProvider>
           {children}
         </SocketProvider>
+
+        {/* Registers /sw.js in production. Renders no visible UI. */}
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMANA Admin — You're Offline</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #0f172a;        /* slate-900 — matches dark admin theme */
+        color: #e2e8f0;             /* slate-200 */
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .card {
+        text-align: center;
+        max-width: 420px;
+        width: 90%;
+        background: #1e293b;        /* slate-800 */
+        border: 1px solid #334155;  /* slate-700 */
+        border-radius: 16px;
+        padding: 48px 40px;
+      }
+
+      .icon {
+        font-size: 56px;
+        margin-bottom: 24px;
+        display: block;
+      }
+
+      h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #f1f5f9;             /* slate-100 */
+        margin-bottom: 12px;
+      }
+
+      p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: #94a3b8;             /* slate-400 */
+        margin-bottom: 28px;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #fef3c7;
+        color: #92400e;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 999px;
+        margin-bottom: 28px;
+      }
+
+      button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #6366f1;        /* indigo-500 */
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 12px 28px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button:hover { background: #4f46e5; }
+
+      .status {
+        margin-top: 24px;
+        font-size: 12px;
+        color: #475569;             /* slate-600 */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <span class="icon">📡</span>
+      <span class="badge">No Internet Connection</span>
+      <h1>SMANA Admin is Offline</h1>
+      <p>
+        You are currently offline. Some previously loaded data
+        may still be available, but no new data can be fetched
+        and changes cannot be saved until your connection is restored.
+      </p>
+      <button onclick="retryConnection()">
+        ↻ &nbsp;Retry Connection
+      </button>
+      <p class="status" id="status">Checking connection…</p>
+    </div>
+
+    <script>
+      // Auto-refresh the page when connectivity is restored
+      window.addEventListener("online", () => {
+        document.getElementById("status").textContent = "Connection restored! Reloading…";
+        setTimeout(() => location.reload(), 800);
+      });
+
+      function retryConnection() {
+        fetch("/manifest.json", { method: "HEAD", cache: "no-store" })
+          .then(() => location.reload())
+          .catch(() => {
+            document.getElementById("status").textContent =
+              "Still offline. Please check your network.";
+          });
+      }
+
+      // Update status every 5 seconds
+      setInterval(() => {
+        if (!navigator.onLine) {
+          document.getElementById("status").textContent =
+            "Still offline — " + new Date().toLocaleTimeString();
+        }
+      }, 5000);
+
+      document.getElementById("status").textContent = navigator.onLine
+        ? "Network detected — tap Retry."
+        : "Device reports: offline.";
+    </script>
+  </body>
+</html>
