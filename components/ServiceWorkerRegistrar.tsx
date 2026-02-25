@@ -1,94 +1,101 @@
-"use client";
+'use client';
+
+import { useEffect } from 'react';
+import {
+    isPushSupported,
+    requestNotificationPermission,
+    subscribeToPush,
+} from '@/lib/pushNotifications';
 
 /**
  * ServiceWorkerRegistrar
  *
- * Client-side component that registers the custom service worker (public/sw.js).
- * Mounted once in the root layout. Handles:
- *  - Registration on first load
- *  - Auto-update detection when a new SW version is available
- *  - Console logging in development for debugging
+ * Registers /sw.js in production and — after the user grants notification
+ * permission — subscribes to Web Push notifications.
  *
- * This component renders nothing visible — it is purely functional.
+ * Flow:
+ * 1. Register /sw.js (same as before)
+ * 2. Prompt for notification permission (first visit only)
+ * 3. Call pushManager.subscribe() → POST subscription to backend
+ * 4. On detect of a new SW version → silent SKIP_WAITING + reload
  */
-
-import { useEffect } from "react";
-
 export function ServiceWorkerRegistrar() {
-  useEffect(() => {
-    // Service workers are not supported in all environments
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
-      return;
-    }
+    useEffect(() => {
+        if (process.env.NODE_ENV !== 'production') return;
+        if (!('serviceWorker' in navigator)) return;
 
-    // Only register in production — avoid interfering with Next.js HMR in development
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[SW] Skipping registration in development mode.");
-      return;
-    }
+        let registration: ServiceWorkerRegistration | null = null;
 
-    const register = async () => {
-      try {
-        const registration = await navigator.serviceWorker.register("/sw.js", {
-          // Scope is set to "/" to cover the entire admin panel.
-          // Change to "/dashboard/" if you want a more restricted scope.
-          scope: "/",
-          updateViaCache: "none", // Always check the network for a new SW on navigation
-        });
+        async function register() {
+            try {
+                registration = await navigator.serviceWorker.register('/sw.js', {
+                    scope: '/',
+                    updateViaCache: 'none',
+                });
 
-        console.log("[SW] Registered. Scope:", registration.scope);
+                console.log('[SW] Registered:', registration.scope);
 
-        // Check for updates every time the page becomes visible
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible") {
-            registration.update().catch(console.warn);
-          }
-        });
+                // ── Auto-update: detect new SW version ──────────────────────────
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration!.installing;
+                    if (!newWorker) return;
 
-        // Detect when a new service worker is waiting to activate
-        registration.addEventListener("updatefound", () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
+                    newWorker.addEventListener('statechange', () => {
+                        if (
+                            newWorker.state === 'installed' &&
+                            navigator.serviceWorker.controller
+                        ) {
+                            console.log('[SW] New version detected. Activating…');
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    });
+                });
 
-          newWorker.addEventListener("statechange", () => {
-            if (
-              newWorker.state === "installed" &&
-              navigator.serviceWorker.controller
-            ) {
-              // A new version is ready — you can prompt the user to refresh.
-              // For admin panels, a silent auto-refresh is usually fine.
-              console.log("[SW] New version available. Refreshing…");
-              newWorker.postMessage({ type: "SKIP_WAITING" });
-              window.location.reload();
+                // Reload after controller change (new SW took over)
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    window.location.reload();
+                });
+
+                // ── Push notification subscription ───────────────────────────────
+                if (!isPushSupported()) {
+                    console.warn('[Push] Not supported in this browser');
+                    return;
+                }
+
+                // Don't ask again if already subscribed
+                const alreadySubscribed = localStorage.getItem('pushSubscribed') === 'true';
+                if (alreadySubscribed) {
+                    // Re-check subscription is still valid on every page load
+                    const existingSub = await registration.pushManager.getSubscription();
+                    if (existingSub) {
+                        console.log('[Push] Already subscribed ✓');
+                        return;
+                    }
+                    // Subscription was cleared — re-subscribe
+                    localStorage.removeItem('pushSubscribed');
+                }
+
+                const granted = await requestNotificationPermission();
+                if (!granted) {
+                    console.warn('[Push] Permission not granted');
+                    return;
+                }
+
+                await subscribeToPush(registration);
+
+                // Check for SW updates on each visibility change (tab focus)
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible' && registration) {
+                        registration.update();
+                    }
+                });
+            } catch (err) {
+                console.error('[SW] Registration failed:', err);
             }
-          });
-        });
+        }
 
-        // Reload the page when the SW takes control (after update)
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener("controllerchange", () => {
-          if (!refreshing) {
-            refreshing = true;
-            window.location.reload();
-          }
-        });
-      } catch (err) {
-        console.error("[SW] Registration failed:", err);
-      }
-    };
+        register();
+    }, []);
 
-    // Register after the page fully loads to not compete with critical resources
-    if (document.readyState === "complete") {
-      register();
-    } else {
-      window.addEventListener("load", register);
-    }
-
-    return () => {
-      window.removeEventListener("load", register);
-    };
-  }, []);
-
-  // No visible output
-  return null;
+    return null; // Renders no UI
 }

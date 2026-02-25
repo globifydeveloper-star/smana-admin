@@ -243,3 +243,87 @@ async function navigationStrategy(request) {
         });
     }
 }
+
+// ---------------------------------------------------------------------------
+// PUSH — receive a Web Push from the backend and show an OS notification
+//
+// The backend (pushService.ts) sends a JSON payload:
+// {
+//   title: "New Service Request",
+//   body: "Room 204 — Maintenance requested (Priority: High)",
+//   icon: "/icon-192.png",
+//   badge: "/icon-96.png",
+//   tag: "<referenceId>",     ← collapses duplicate notifications
+//   data: { url: "/dashboard/requests" }
+// }
+// ---------------------------------------------------------------------------
+self.addEventListener("push", (event) => {
+    if (!event.data) return;
+
+    let payload;
+    try {
+        payload = event.data.json();
+    } catch {
+        payload = { title: "SMANA Admin", body: event.data.text() };
+    }
+
+    const {
+        title = "SMANA Admin",
+        body = "",
+        icon = "/icon-192.png",
+        badge = "/icon-96.png",
+        tag,
+        data = {},
+    } = payload;
+
+    const options = {
+        body,
+        icon,
+        badge,
+        tag,                // Same tag = new push replaces existing notification (no spam)
+        renotify: !!tag,    // Vibrate/ring even if same tag replaces an existing one
+        data,
+        requireInteraction: false,  // Auto-dismiss after a few seconds
+        actions: [
+            { action: "open", title: "View" },
+            { action: "dismiss", title: "Dismiss" },
+        ],
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(title, options)
+    );
+});
+
+// ---------------------------------------------------------------------------
+// NOTIFICATIONCLICK — when the user clicks the OS notification
+// Open (or focus) the admin panel at the URL embedded in notification.data.url
+// ---------------------------------------------------------------------------
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+
+    if (event.action === "dismiss") return;
+
+    const targetUrl = (event.notification.data && event.notification.data.url)
+        ? event.notification.data.url
+        : "/dashboard";
+
+    event.waitUntil(
+        clients
+            .matchAll({ type: "window", includeUncontrolled: true })
+            .then((clientList) => {
+                // If admin tab is already open, focus it and navigate
+                for (const client of clientList) {
+                    if (client.url.includes("/dashboard") && "focus" in client) {
+                        client.focus();
+                        client.navigate(targetUrl);
+                        return;
+                    }
+                }
+                // Otherwise open a new tab
+                if (clients.openWindow) {
+                    return clients.openWindow(targetUrl);
+                }
+            })
+    );
+});
