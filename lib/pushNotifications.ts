@@ -76,26 +76,41 @@ export async function subscribeToPush(
         // ── 1. Get Firebase Messaging instance ──────────────────────────────
         const messaging = await getFirebaseMessaging();
         if (!messaging) {
-            console.warn('[FCM] Firebase Messaging not supported in this browser — skipping');
+            console.warn('[FCM] ⚠️ Firebase Messaging not supported in this browser — push skipped');
             return false;
         }
 
         // ── 2. Validate VAPID key is configured ─────────────────────────────
         if (!FCM_VAPID_KEY) {
-            console.error('[FCM] NEXT_PUBLIC_FIREBASE_VAPID_KEY is not set — cannot get FCM token');
+            console.error(
+                '[FCM] ❌ NEXT_PUBLIC_FIREBASE_VAPID_KEY is not set!\n' +
+                '      → In production: add this env var to your hosting platform (Vercel/Railway/etc.)\n' +
+                '      → Value: BArc2aJAcYvl4x7Kxr0P-H5oFPpLOG5gu0iJw9GLGTj6F2_4_LI0v9oszIt4H-VzOJF3dUCScjhoxbIsBSzSShs'
+            );
             return false;
         }
+
+        console.log('[FCM] Requesting token with VAPID key:', FCM_VAPID_KEY.slice(0, 20) + '…');
 
         // ── 3. Get (or refresh) the FCM registration token ──────────────────
-        const fcmToken = await getToken(messaging, {
-            vapidKey: FCM_VAPID_KEY,
-            serviceWorkerRegistration: registration,
-        });
-
-        if (!fcmToken) {
-            console.error('[FCM] getToken() returned empty — notification permission may have been denied');
+        let fcmToken: string;
+        try {
+            fcmToken = await getToken(messaging, {
+                vapidKey: FCM_VAPID_KEY,
+                serviceWorkerRegistration: registration,
+            });
+        } catch (tokenErr: any) {
+            console.error('[FCM] ❌ getToken() threw an error:', tokenErr?.message || tokenErr);
+            console.error('[FCM]    Common causes: notification permission denied, SW not active, wrong VAPID key');
             return false;
         }
+
+        if (!fcmToken) {
+            console.error('[FCM] ❌ getToken() returned empty string — notification permission may be denied in browser settings');
+            return false;
+        }
+
+        console.log('[FCM] Token obtained:', fcmToken.slice(0, 20) + '…');
 
         // ── 4. Send token to backend ─────────────────────────────────────────
         const jwtToken = getAuthToken();
@@ -115,14 +130,15 @@ export async function subscribeToPush(
             return true;
         } else {
             const errText = await saveRes.text().catch(() => '');
-            console.error('[FCM] Failed to save FCM token:', saveRes.status, errText);
+            console.error('[FCM] ❌ Failed to save FCM token to backend:', saveRes.status, errText);
             return false;
         }
     } catch (err: any) {
-        console.error('[FCM] subscribeToPush error:', err?.message || err);
+        console.error('[FCM] subscribeToPush unexpected error:', err?.message || err);
         return false;
     }
 }
+
 
 // ---------------------------------------------------------------------------
 // unsubscribeFromPush — call on logout to de-register FCM token
