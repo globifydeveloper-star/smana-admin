@@ -8,7 +8,9 @@
  * Usage: called from ServiceWorkerRegistrar after SW registration.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.smanahotels.com';
+// Must match lib/config.ts: NEXT_PUBLIC_BACKEND_URL → http://localhost:5000 locally
+//                                                    → https://api.smanahotels.com in production
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 // ---------------------------------------------------------------------------
 // Convert a URL-safe base64 string to a Uint8Array (required by PushManager)

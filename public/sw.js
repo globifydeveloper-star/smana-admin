@@ -9,7 +9,7 @@
  *  - Navigation requests                       → Network-First with offline fallback
  */
 
-const CACHE_VERSION = "v1.1.0"; // Bump this on every production deploy
+const CACHE_VERSION = "v1.2.0"; // Bump this on every production deploy
 const STATIC_CACHE = `smana-admin-static-${CACHE_VERSION}`;
 const API_CACHE = `smana-admin-api-${CACHE_VERSION}`;
 
@@ -44,6 +44,14 @@ const AUTH_ROUTE_PATTERNS = [
 // Mutation methods — never read from or write to cache
 // ---------------------------------------------------------------------------
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+// ---------------------------------------------------------------------------
+// Socket.IO URL pattern — MUST be completely ignored by the SW.
+// Socket.IO uses HTTP long-polling AND WebSocket upgrades. If the SW intercepts
+// the polling requests it corrupts the transport negotiation, causing the socket
+// to stall or disconnect immediately.
+// ---------------------------------------------------------------------------
+const SOCKETIO_PATH_PATTERN = /\/socket\.io\//i;
 
 // ---------------------------------------------------------------------------
 // Only cache GET responses from our own API
@@ -131,6 +139,13 @@ self.addEventListener("message", (event) => {
 self.addEventListener("fetch", (event) => {
     const { request } = event;
     const url = new URL(request.url);
+
+    // 0. CRITICAL: Pass through all Socket.IO traffic unconditionally.
+    //    Socket.IO polling requests look like GET /socket.io/?EIO=4&...
+    //    Caching or delaying them breaks real-time connectivity entirely.
+    if (SOCKETIO_PATH_PATTERN.test(url.pathname)) {
+        return; // Do not call event.respondWith → browser handles normally
+    }
 
     // 1. Ignore non-GET mutations entirely — let them hit the network as normal
     if (MUTATION_METHODS.has(request.method)) {
