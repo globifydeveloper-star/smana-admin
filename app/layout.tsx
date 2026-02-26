@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Lato } from "next/font/google";
 import { SocketProvider } from "@/components/providers/SocketProvider";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { Toaster } from 'sonner';
 import "./globals.css";
 
 const lato = Lato({
@@ -52,6 +53,9 @@ export default function RootLayout({
 
         {/* Registers /sw.js in production. Renders no visible UI. */}
         <ServiceWorkerRegistrar />
+        
+        {/* In-app toast notifications */}
+        <Toaster position="top-right" theme="dark" />
       </body>
     </html>
   );

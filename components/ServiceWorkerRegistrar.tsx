@@ -58,6 +58,32 @@ export function ServiceWorkerRegistrar() {
                         registration.update();
                     }
                 });
+
+                // --- NEW: Web Browser Push Support ---
+                // If the user is logged in (has a token), we must ensure their browser
+                // is subscribed to push. Without this, returning web users or those who
+                // didn't install the PWA never get push prompts.
+                const checkPushSubscription = async () => {
+                    // Only prompt if they have a valid session (meaning they belong to a role)
+                    const raw = localStorage.getItem('userInfo');
+                    if (raw) {
+                        try {
+                            const { isPushSupported, requestNotificationPermission, subscribeToPush } = await import('@/lib/pushNotifications');
+                            if (isPushSupported()) {
+                                const granted = await requestNotificationPermission();
+                                if (granted) {
+                                    await subscribeToPush(registration);
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('[FCM] Background push subscription failed:', err);
+                        }
+                    }
+                };
+                
+                // Allow the main UI to render first before popping the permission dialog
+                setTimeout(checkPushSubscription, 2000);
+
             } catch (err) {
                 console.error('[SW] Registration failed:', err);
             }

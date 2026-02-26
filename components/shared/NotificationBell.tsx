@@ -7,6 +7,7 @@ import { useSocket } from '@/components/providers/SocketProvider';
 import api from '@/lib/axios';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 interface Notification {
     _id: string;
@@ -58,6 +59,17 @@ export function NotificationBell() {
         const handleIncoming = (notification: Notification) => {
             setNotifications((prev) => {
                 if (prev.some((n) => n._id === notification._id)) return prev;
+                
+                // Show in-app toast for the new notification!
+                toast.info(notification.title, {
+                    description: notification.message,
+                    duration: 5000,
+                    action: notification.link ? {
+                        label: 'View',
+                        onClick: () => router.push(notification.link!)
+                    } : undefined
+                });
+
                 return [notification, ...prev];
             });
         };
