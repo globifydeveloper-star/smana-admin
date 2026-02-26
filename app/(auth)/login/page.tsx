@@ -33,18 +33,36 @@ export default function LoginPage() {
             localStorage.setItem('userInfo', JSON.stringify(data));
             Cookies.set('userInfo', JSON.stringify(data));
 
-            // ── Trigger push notification subscription immediately after login ──
-            // At this point the JWT token is in localStorage, so Bearer auth works.
+            // ── FCM push subscription — runs BEFORE redirect so the page doesn't
+            // navigate away while getToken() is in progress (race condition fix).
             if (isPushSupported()) {
-                requestNotificationPermission().then(async (granted) => {
-                    if (!granted) return;
-                    try {
+                try {
+                    const granted = await requestNotificationPermission();
+                    if (granted) {
+                        // Wait for SW to be both registered AND actively controlling this page.
+                        // navigator.serviceWorker.ready resolves when a SW is active, but the
+                        // SW may not yet be the controller (happens on first install).
+                        // We give it a brief wait then call subscribeToPush regardless — 
+                        // getToken() will use the registration even without active control.
                         const reg = await navigator.serviceWorker.ready;
+
+                        // If the SW is not yet controlling this page, wait up to 2s for it.
+                        if (!navigator.serviceWorker.controller) {
+                            await new Promise<void>((resolve) => {
+                                const timeout = setTimeout(resolve, 2000);
+                                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                                    clearTimeout(timeout);
+                                    resolve();
+                                }, { once: true });
+                            });
+                        }
+
                         await subscribeToPush(reg);
-                    } catch (e) {
-                        console.warn('[Push] Subscription after login failed:', e);
                     }
-                });
+                } catch (pushErr) {
+                    // Never block login if push fails
+                    console.warn('[FCM] Push subscription failed (non-blocking):', pushErr);
+                }
             }
 
             router.push('/dashboard');

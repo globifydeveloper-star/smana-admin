@@ -7,9 +7,16 @@
  *  - POST / PUT / PATCH / DELETE              → Network-Only (never cached)
  *  - Auth routes (/login, /logout, /auth)     → Network-Only (never intercepted)
  *  - Navigation requests                       → Network-First with offline fallback
+ *
+ * Firebase Cloud Messaging (FCM):
+ *  - The backend sends FCM messages using the `webpush` property in MulticastMessage.
+ *  - FCM delivers these as standard Web Push messages through the browser Push API.
+ *  - Our `push` event handler below processes them — NO Firebase SDK is needed here.
+ *  - importScripts from external CDNs would be blocked by CSP and crash SW registration.
  */
 
-const CACHE_VERSION = "v1.3.0"; // Bump this on every production deploy
+const CACHE_VERSION = "v1.4.0"; // Bumped: fixed manifest.webmanifest path
+
 const STATIC_CACHE = `smana-admin-static-${CACHE_VERSION}`;
 const API_CACHE = `smana-admin-api-${CACHE_VERSION}`;
 
@@ -19,7 +26,7 @@ const API_CACHE = `smana-admin-api-${CACHE_VERSION}`;
 const PRE_CACHE_ASSETS = [
     "/",
     "/offline.html",
-    "/manifest.json",
+    "/manifest.webmanifest",  // Next.js serves manifest.ts at /manifest.webmanifest (NOT /manifest.json)
     "/icon-96.png",
     "/icon-192.png",
     "/icon-512.png",
@@ -260,18 +267,24 @@ async function navigationStrategy(request) {
 }
 
 // ---------------------------------------------------------------------------
-// PUSH — receive a Web Push from the backend and show an OS notification
+// PUSH — handle push events for browsers where FCM does not intercept directly
+//
+// When the Firebase Messaging SDK (via onBackgroundMessage above) handles a
+// push it calls showNotification internally — this plain push listener acts
+// as a fallback to ensure Chrome/Edge never penalise us for
+// "push event without notification".
+//
+// FCM messages with a `notification` payload are handled by the Firebase SDK.
+// Data-only FCM messages fall through to this handler.
 //
 // COMPATIBILITY NOTES:
 // - `actions` are NOT supported on iOS Safari, Firefox, or Android Firefox.
-//   Including them causes a silent DOMException and no notification is shown.
-//   We do not use actions for maximum cross-browser support.
-// - `badge` is only supported in Chromium-based browsers. Other browsers ignore it.
-// - `vibrate` works on Android Chrome but is silently ignored on iOS.
+// - `badge` is Chromium-only; other browsers ignore it.
+// - `vibrate` works on Android Chrome; silently ignored on iOS.
 // ---------------------------------------------------------------------------
 self.addEventListener("push", (event) => {
-    // Chrome & Edge require that push events ALWAYS show a notification.
-    // If we fail to call showNotification, the browser may disable push for the site.
+    // Firebase Messaging SDK intercepts FCM push events first via onBackgroundMessage.
+    // This listener only runs for non-FCM pushes or data-only FCM messages.
     event.waitUntil(
         (async () => {
             let title = "SMANA Admin";
@@ -284,19 +297,20 @@ self.addEventListener("push", (event) => {
             if (event.data) {
                 try {
                     const payload = event.data.json();
-                    title = payload.title || title;
-                    body = payload.body || body;
-                    icon = payload.icon || icon;
-                    badge = payload.badge || badge;
-                    tag = payload.tag;
-                    notifData = payload.data || notifData;
+                    // Support both FCM notification format and our custom format
+                    const n = payload.notification || {};
+                    const d = payload.data || payload;
+                    title = n.title || d.title || title;
+                    body = n.body || d.body || body;
+                    icon = n.icon || d.icon || icon;
+                    badge = d.badge || badge;
+                    tag = d.tag;
+                    notifData = { url: d.url || n.click_action || '/dashboard', ...(d || {}) };
                 } catch {
-                    // Plaintext fallback
                     body = event.data.text() || body;
                 }
             }
 
-            // NOTE: No `actions` — they crash silently on iOS and Firefox.
             const options = {
                 body,
                 icon,
@@ -304,14 +318,13 @@ self.addEventListener("push", (event) => {
                 tag,
                 renotify: !!tag,
                 data: notifData,
-                vibrate: [200, 100, 200],  // Android only, ignored elsewhere
+                vibrate: [200, 100, 200],
             };
 
             try {
                 await self.registration.showNotification(title, options);
             } catch (err) {
                 console.error("[SW Push] showNotification failed:", err);
-                // Last resort: show a generic notification so Chrome doesn't penalise us
                 await self.registration.showNotification("SMANA Admin", {
                     body: "You have a new notification.",
                     icon: "/icon-192.png",

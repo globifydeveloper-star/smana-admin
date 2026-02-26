@@ -13,7 +13,7 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "SMANA Hotel Admin",
   description: "Luxury Hotel Administration System",
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
