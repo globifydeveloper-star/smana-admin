@@ -9,7 +9,7 @@
  *  - Navigation requests                       → Network-First with offline fallback
  */
 
-const CACHE_VERSION = "v1.2.0"; // Bump this on every production deploy
+const CACHE_VERSION = "v1.3.0"; // Bump this on every production deploy
 const STATIC_CACHE = `smana-admin-static-${CACHE_VERSION}`;
 const API_CACHE = `smana-admin-api-${CACHE_VERSION}`;
 
@@ -262,62 +262,70 @@ async function navigationStrategy(request) {
 // ---------------------------------------------------------------------------
 // PUSH — receive a Web Push from the backend and show an OS notification
 //
-// The backend (pushService.ts) sends a JSON payload:
-// {
-//   title: "New Service Request",
-//   body: "Room 204 — Maintenance requested (Priority: High)",
-//   icon: "/icon-192.png",
-//   badge: "/icon-96.png",
-//   tag: "<referenceId>",     ← collapses duplicate notifications
-//   data: { url: "/dashboard/requests" }
-// }
+// COMPATIBILITY NOTES:
+// - `actions` are NOT supported on iOS Safari, Firefox, or Android Firefox.
+//   Including them causes a silent DOMException and no notification is shown.
+//   We do not use actions for maximum cross-browser support.
+// - `badge` is only supported in Chromium-based browsers. Other browsers ignore it.
+// - `vibrate` works on Android Chrome but is silently ignored on iOS.
 // ---------------------------------------------------------------------------
 self.addEventListener("push", (event) => {
-    if (!event.data) return;
-
-    let payload;
-    try {
-        payload = event.data.json();
-    } catch {
-        payload = { title: "SMANA Admin", body: event.data.text() };
-    }
-
-    const {
-        title = "SMANA Admin",
-        body = "",
-        icon = "/icon-192.png",
-        badge = "/icon-96.png",
-        tag,
-        data = {},
-    } = payload;
-
-    const options = {
-        body,
-        icon,
-        badge,
-        tag,                // Same tag = new push replaces existing notification (no spam)
-        renotify: !!tag,    // Vibrate/ring even if same tag replaces an existing one
-        data,
-        requireInteraction: false,  // Auto-dismiss after a few seconds
-        actions: [
-            { action: "open", title: "View" },
-            { action: "dismiss", title: "Dismiss" },
-        ],
-    };
-
+    // Chrome & Edge require that push events ALWAYS show a notification.
+    // If we fail to call showNotification, the browser may disable push for the site.
     event.waitUntil(
-        self.registration.showNotification(title, options)
+        (async () => {
+            let title = "SMANA Admin";
+            let body = "You have a new notification.";
+            let icon = "/icon-192.png";
+            let badge = "/icon-96.png";
+            let tag = undefined;
+            let notifData = { url: "/dashboard" };
+
+            if (event.data) {
+                try {
+                    const payload = event.data.json();
+                    title = payload.title || title;
+                    body = payload.body || body;
+                    icon = payload.icon || icon;
+                    badge = payload.badge || badge;
+                    tag = payload.tag;
+                    notifData = payload.data || notifData;
+                } catch {
+                    // Plaintext fallback
+                    body = event.data.text() || body;
+                }
+            }
+
+            // NOTE: No `actions` — they crash silently on iOS and Firefox.
+            const options = {
+                body,
+                icon,
+                badge,
+                tag,
+                renotify: !!tag,
+                data: notifData,
+                vibrate: [200, 100, 200],  // Android only, ignored elsewhere
+            };
+
+            try {
+                await self.registration.showNotification(title, options);
+            } catch (err) {
+                console.error("[SW Push] showNotification failed:", err);
+                // Last resort: show a generic notification so Chrome doesn't penalise us
+                await self.registration.showNotification("SMANA Admin", {
+                    body: "You have a new notification.",
+                    icon: "/icon-192.png",
+                });
+            }
+        })()
     );
 });
 
 // ---------------------------------------------------------------------------
-// NOTIFICATIONCLICK — when the user clicks the OS notification
-// Open (or focus) the admin panel at the URL embedded in notification.data.url
+// NOTIFICATIONCLICK — open the admin dashboard at the correct URL
 // ---------------------------------------------------------------------------
 self.addEventListener("notificationclick", (event) => {
     event.notification.close();
-
-    if (event.action === "dismiss") return;
 
     const targetUrl = (event.notification.data && event.notification.data.url)
         ? event.notification.data.url
@@ -327,15 +335,22 @@ self.addEventListener("notificationclick", (event) => {
         clients
             .matchAll({ type: "window", includeUncontrolled: true })
             .then((clientList) => {
-                // If admin tab is already open, focus it and navigate
+                // If admin tab is already open, focus and navigate it
                 for (const client of clientList) {
-                    if (client.url.includes("/dashboard") && "focus" in client) {
-                        client.focus();
-                        client.navigate(targetUrl);
-                        return;
+                    if ("focus" in client) {
+                        try {
+                            client.focus();
+                            // navigate() is not available on iOS — guard it
+                            if ("navigate" in client) {
+                                client.navigate(targetUrl);
+                            }
+                            return;
+                        } catch {
+                            // Fall through to open new window
+                        }
                     }
                 }
-                // Otherwise open a new tab
+                // No existing window — open a new one
                 if (clients.openWindow) {
                     return clients.openWindow(targetUrl);
                 }

@@ -10,18 +10,17 @@ import {
 /**
  * ServiceWorkerRegistrar
  *
- * Registers /sw.js in production and — after the user grants notification
- * permission — subscribes to Web Push notifications.
+ * Registers /sw.js and subscribes to Web Push notifications.
  *
- * Flow:
- * 1. Register /sw.js (same as before)
- * 2. Prompt for notification permission (first visit only)
- * 3. Call pushManager.subscribe() → POST subscription to backend
- * 4. On detect of a new SW version → silent SKIP_WAITING + reload
+ * Key behaviours:
+ * - Works in BOTH development (npm run dev) and production.
+ * - On every page load after login, re-syncs the push subscription with the
+ *   backend. This ensures the subscription is never stale (e.g. VAPID keys
+ *   rotated, user logged in on new device, backend DB wiped, etc.).
+ * - Permission is requested once; subsequent visits skip the dialog.
  */
 export function ServiceWorkerRegistrar() {
     useEffect(() => {
-        if (process.env.NODE_ENV !== 'production') return;
         if (!('serviceWorker' in navigator)) return;
 
         let registration: ServiceWorkerRegistration | null = null;
@@ -45,13 +44,13 @@ export function ServiceWorkerRegistrar() {
                             newWorker.state === 'installed' &&
                             navigator.serviceWorker.controller
                         ) {
-                            console.log('[SW] New version detected. Activating…');
+                            console.log('[SW] New version — activating…');
                             newWorker.postMessage({ type: 'SKIP_WAITING' });
                         }
                     });
                 });
 
-                // Reload after controller change (new SW took over)
+                // Reload once the new SW takes over
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                     window.location.reload();
                 });
@@ -62,28 +61,37 @@ export function ServiceWorkerRegistrar() {
                     return;
                 }
 
-                // Don't ask again if already subscribed
-                const alreadySubscribed = localStorage.getItem('pushSubscribed') === 'true';
-                if (alreadySubscribed) {
-                    // Re-check subscription is still valid on every page load
-                    const existingSub = await registration.pushManager.getSubscription();
-                    if (existingSub) {
-                        console.log('[Push] Already subscribed ✓');
-                        return;
-                    }
-                    // Subscription was cleared — re-subscribe
-                    localStorage.removeItem('pushSubscribed');
-                }
-
-                const granted = await requestNotificationPermission();
-                if (!granted) {
-                    console.warn('[Push] Permission not granted');
+                // If permission is already denied, stop early (do not re-prompt)
+                if (Notification.permission === 'denied') {
+                    console.warn('[Push] Notification permission was blocked by the user. Reset in browser settings.');
                     return;
                 }
 
-                await subscribeToPush(registration);
+                // Request permission (shows dialog once, then silently returns result)
+                const granted = await requestNotificationPermission();
+                if (!granted) {
+                    console.warn('[Push] Notification permission not granted');
+                    return;
+                }
 
-                // Check for SW updates on each visibility change (tab focus)
+                // ── ALWAYS re-sync subscription with the backend on each login ──
+                // Rationale: the backend subscription record may be stale (VAPID keys
+                // rotated, backend DB reset, new deployment). We always call subscribe
+                // which uses upsert on the server — safe to call repeatedly.
+                const result = await subscribeToPush(registration);
+                if (result) {
+                    console.log('[Push] Subscription synced with backend ✓');
+                } else {
+                    console.error(
+                        '[Push] Subscription FAILED. Check:\n' +
+                        '  1. VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY set on the backend server\n' +
+                        '  2. NEXT_PUBLIC_BACKEND_URL set correctly (current: ' +
+                        (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000') + ')\n' +
+                        '  3. You are logged in (the /api/push/subscribe endpoint requires auth)'
+                    );
+                }
+
+                // Trigger SW update check on tab focus
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible' && registration) {
                         registration.update();
@@ -97,5 +105,5 @@ export function ServiceWorkerRegistrar() {
         register();
     }, []);
 
-    return null; // Renders no UI
+    return null;
 }
