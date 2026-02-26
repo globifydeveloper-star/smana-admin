@@ -8,6 +8,16 @@ import { useEffect } from 'react';
  * Registers /sw.js for offline support and push notification delivery.
  * Push subscriptions are handled separately in the login flow — not here.
  * This component only handles SW lifecycle (registration + updates).
+ *
+ * ⚠️  IMPORTANT: We intentionally do NOT listen for `controllerchange` and
+ * call `window.location.reload()`.  Doing so caused a race condition: when a
+ * new SW was deployed and activated mid-login (via skipWaiting → clients.claim),
+ * the page reload aborted the in-flight /auth/login request, wiped the JWT from
+ * localStorage, and left the user staring at "Invalid email or password".
+ *
+ * The SW's `clients.claim()` call in the activate handler is sufficient — all
+ * open tabs are adopted by the new SW without a forced reload.  The updated
+ * code only takes effect on the next natural navigation (F5, link click, etc.).
  */
 export function ServiceWorkerRegistrar() {
     useEffect(() => {
@@ -22,7 +32,11 @@ export function ServiceWorkerRegistrar() {
 
                 console.log('[SW] Registered:', registration.scope);
 
-                // Auto-update: detect new SW version waiting to activate
+                // Detect a new SW version waiting to activate and let it skip
+                // the waiting phase so it becomes active immediately — but we
+                // do NOT force a page reload.  The new SW's clients.claim()
+                // silently adopts this tab; the updated fetch handlers will be
+                // used for all subsequent requests without disrupting the user.
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     if (!newWorker) return;
@@ -32,15 +46,10 @@ export function ServiceWorkerRegistrar() {
                             newWorker.state === 'installed' &&
                             navigator.serviceWorker.controller
                         ) {
-                            // Silently activate new SW
+                            // Tell the waiting SW to activate — no page reload.
                             newWorker.postMessage({ type: 'SKIP_WAITING' });
                         }
                     });
-                });
-
-                // Reload once the new SW takes over all tabs
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    window.location.reload();
                 });
 
                 // Check for updates when tab regains focus

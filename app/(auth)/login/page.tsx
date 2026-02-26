@@ -39,24 +39,9 @@ export default function LoginPage() {
                 try {
                     const granted = await requestNotificationPermission();
                     if (granted) {
-                        // Wait for SW to be both registered AND actively controlling this page.
-                        // navigator.serviceWorker.ready resolves when a SW is active, but the
-                        // SW may not yet be the controller (happens on first install).
-                        // We give it a brief wait then call subscribeToPush regardless — 
-                        // getToken() will use the registration even without active control.
+                        // navigator.serviceWorker.ready resolves once a SW is
+                        // active and controlling the page — sufficient for getToken().
                         const reg = await navigator.serviceWorker.ready;
-
-                        // If the SW is not yet controlling this page, wait up to 2s for it.
-                        if (!navigator.serviceWorker.controller) {
-                            await new Promise<void>((resolve) => {
-                                const timeout = setTimeout(resolve, 2000);
-                                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                                    clearTimeout(timeout);
-                                    resolve();
-                                }, { once: true });
-                            });
-                        }
-
                         await subscribeToPush(reg);
                     }
                 } catch (pushErr) {
