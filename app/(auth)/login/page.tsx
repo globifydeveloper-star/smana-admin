@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Lock, Mail } from 'lucide-react';
 import api from '@/lib/axios';
 import Cookies from 'js-cookie';
+import { isPushSupported, requestNotificationPermission, subscribeToPush } from '@/lib/pushNotifications';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -31,6 +32,20 @@ export default function LoginPage() {
 
             localStorage.setItem('userInfo', JSON.stringify(data));
             Cookies.set('userInfo', JSON.stringify(data));
+
+            // ── Trigger push notification subscription immediately after login ──
+            // At this point the JWT token is in localStorage, so Bearer auth works.
+            if (isPushSupported()) {
+                requestNotificationPermission().then(async (granted) => {
+                    if (!granted) return;
+                    try {
+                        const reg = await navigator.serviceWorker.ready;
+                        await subscribeToPush(reg);
+                    } catch (e) {
+                        console.warn('[Push] Subscription after login failed:', e);
+                    }
+                });
+            }
 
             router.push('/dashboard');
         } catch (err: any) {
